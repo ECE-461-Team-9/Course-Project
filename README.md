@@ -2,4 +2,4 @@
 The repo for the course project Fall 2024
 
 Team Members:
-Leo Chen: chen3900@purdue.edu
+1) Leo Chen: chen3900@purdue.edu
