@@ -1,0 +1,4 @@
+# requirements.txt
+
+# packages and versions
+numpy==1.24.3          # For numerical computations
