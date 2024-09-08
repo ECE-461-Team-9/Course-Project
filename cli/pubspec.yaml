@@ -6,6 +6,7 @@ version: 1.0.0
 environment:
   sdk: ^3.5.0
 
+# Install dependencies with the command dart pub get, the packages should now appear in a .dart_tool folder with a package_config.json.
 # Add regular dependencies here.
 dependencies:
   # path: ^1.8.0
