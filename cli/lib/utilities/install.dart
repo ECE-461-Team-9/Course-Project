@@ -1,18 +1,21 @@
 import 'dart:io';
 
-/// List of essential TypeScript libraries and their versions to install.
-final Map<String, String?> dependencies = {
+/// Default TypeScript libraries and their versions.
+final Map<String, String?> defaultDependencies = {
   'typescript': null,   // TypeScript compiler
   'ts-node': null,      // Run TypeScript files directly
-  '@types/node': '18.7.0'   // Node.js type definitions (specify version if needed)
+  '@types/node': '18.7.0'   // Node.js type definitions
 };
 
-/// Installs the specified npm dependencies.
-Future<void> installDependencies(Map<String, String?> dependencies) async {
+/// Installs the specified npm dependencies, using default values if none provided.
+Future<void> installDependencies([Map<String, String?>? dependencies]) async {
+  // Use defaultDependencies if no custom dependencies are provided
+  final effectiveDependencies = dependencies ?? defaultDependencies;
+
   // Construct the npm install command arguments
   var args = ['install', '--save-dev'];
   
-  dependencies.forEach((pkg, version) {
+  effectiveDependencies.forEach((pkg, version) {
     args.add(version == null ? pkg : '$pkg@$version');
   });
 
@@ -24,9 +27,4 @@ Future<void> installDependencies(Map<String, String?> dependencies) async {
       print('Error installing dependencies: ${result.stderr}');
     }
   });
-}
-
-void main() async {
-  print('Installing essential TypeScript libraries...');
-  await installDependencies(dependencies);
 }

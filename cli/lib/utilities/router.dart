@@ -1,3 +1,5 @@
+import 'install.dart';
+
 ///
 /// [Router] class parses the arguments and routes to the appropriate
 /// class based on the arguments provided.
@@ -24,7 +26,12 @@ class Router {
   void _parseArguments() {
     switch (_arguments[0]) {
       case 'install':
-        print('install command');
+        print('Installing dependencies...');
+        installDependencies().then((_) {
+          print('Dependencies installation complete.');
+        }).catchError((e) {
+          print('Failed to install dependencies: $e');
+        });
         break;
       case 'test':
         print('test command');
