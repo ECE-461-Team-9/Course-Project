@@ -24,3 +24,7 @@ dist/
 .vscode/
 *.env
 .env.*
+
+# Ignore node_modules and package files
+package.json
+package-lock.json
