@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'install.dart';
 
 ///
@@ -9,6 +11,9 @@ class Router {
 
   /// [Router] constructor
   Router(arguments) {
+    // check if Node.js is installed
+    _checkNodeInstallation();
+
     // set the argumets to the private variable
     _arguments = arguments;
 
@@ -20,6 +25,19 @@ class Router {
     } else {
       // parse the arguments for the appropriate class
       _parseArguments();
+    }
+  }
+
+  void _checkNodeInstallation() async {
+    try {
+      final result = await Process.run('node', ['-v']);
+      if (result.exitCode == 0) {
+        print('Node.js is installed: ${result.stdout}');
+      } else {
+        print('Node.js is not installed.');
+      }
+    } catch (e) {
+      print('Failed to check Node.js installation: $e');
     }
   }
 
