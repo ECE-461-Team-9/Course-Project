@@ -13,3 +13,5 @@ class Metric {
         this.score = newScore;
     }
 }
+
+export { Metric };
