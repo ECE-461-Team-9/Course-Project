@@ -1,17 +1,19 @@
-class Metric {
-    private score: number;
+import { Url } from "../typedefs/definitions";
 
-    constructor(score: number = 0) {
-        this.score = score;
+export class Metric {
+    public score: number;
+    public URL: Url;
+
+    constructor(Url: string) {
+        this.URL = Url;
+        this.score = 0;
     }
 
-    getScore(): boolean {
-        return this.score === 0;
+    getScore(): number {
+        return this.score;
     }
 
     updateScore(newScore: number): void {
         this.score = newScore;
     }
 }
-
-export { Metric };

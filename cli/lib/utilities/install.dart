@@ -4,7 +4,10 @@ import 'dart:io';
 final Map<String, String?> defaultDependencies = {
   'typescript': null,   // TypeScript compiler
   'ts-node': null,      // Run TypeScript files directly
-  '@types/node': '18.7.0'   // Node.js type definitions
+  '@types/node': '18.7.0',   // Node.js type definitions
+  'axios' : null,
+  'isomorphic-git' : null,
+  'fs' : null
 };
 
 /// Installs the specified npm dependencies, using default values if none provided.
