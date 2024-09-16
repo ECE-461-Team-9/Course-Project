@@ -6,6 +6,7 @@ import { License } from './License';
 import { NetScore } from './NetScore';
 import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
+import { FilePath } from '../typedefs/definitions'; // Assuming FilePath is imported from here
 
 export class URLProcessor {
     private urlFile: string;
@@ -28,82 +29,92 @@ export class URLProcessor {
                 crlfDelay: Infinity
             });
 
-            const output = fs.createWriteStream(this.outputFile);
             console.log(`Processing URLs from "${this.urlFile}"...`);
 
             for await (const line of rl) {
                 const url = line.trim();
                 const evaluationResults = this.evaluateUrl(url);
-                output.write(JSON.stringify(evaluationResults) + '\n'); // NDJSON format
+                this.writeResults(evaluationResults);
             }
 
             console.log(`Successfully processed URLs. Output written to "${this.outputFile}".`);
-            output.end();
 
         } catch (error) {
             console.error('Error processing file');
-            process.exit(1);
+            process.exit(1); // Signal failure
         }
     }
 
     private evaluateUrl(url: string): Record<string, any> {
         // BusFactor latency
         const busFactorStart = process.hrtime();
-        const busFactor = new BusFactor(url).getScore();
+        //const busFactor = new BusFactor(url).getScore();
+        const busFactor = 1;
         const busFactorEnd = process.hrtime(busFactorStart);
-        const busFactor_latency = (busFactorEnd[0] * 1e9 + busFactorEnd[1]) / 1e9; // Convert to seconds
+        const busFactorLatency = (busFactorEnd[0] * 1e9 + busFactorEnd[1]) / 1e9; // Convert to seconds
     
         // ResponsiveMaintainer (RM) latency
         const rmStart = process.hrtime();
-        const responsiveMaintainer = new RM(url).getScore();
+        //const responsiveMaintainer = new RM(url).getScore();
+        const responsiveMaintainer = 1;
         const rmEnd = process.hrtime(rmStart);
-        const rm_latency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
+        const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
     
         // License latency
         const licenseStart = process.hrtime();
-        const license = new License(url).getScore();
+        //const license = new License(url).getScore();
+        const license = 1;
         const licenseEnd = process.hrtime(licenseStart);
-        const license_latency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
+        const licenseLatency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
     
         // RampUp latency
         const rampUpStart = process.hrtime();
-        const rampUp = new RampUp(url).getScore();
+        //const rampUp = new RampUp(url).getScore();
+        const rampUp = 1;
         const rampUpEnd = process.hrtime(rampUpStart);
-        const rampUp_latency = (rampUpEnd[0] * 1e9 + rampUpEnd[1]) / 1e9; // Convert to seconds
+        const rampUpLatency = (rampUpEnd[0] * 1e9 + rampUpEnd[1]) / 1e9; // Convert to seconds
     
         // Correctness latency
         const correctnessStart = process.hrtime();
-        const correctness = new Correctness(url).getScore();
+        //const correctness = new Correctness(url).getScore();
+        const correctness = 1;
         const correctnessEnd = process.hrtime(correctnessStart);
-        const correctness_latency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
+        const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
     
-        // NetScore calculation
-        const args = new Net
+        // NetScore latency
+        const netScoreStart = process.hrtime();
         const netScore = new NetScore({
-            const rampUp, 
-            const busFactor, 
+            rampUp, 
+            busFactor, 
             correctness, 
             responsiveMaintainer, 
-            license
-        }).score;
+            license,
+            filepath: this.outputFile as FilePath // Pass the output file path for logging
+        });
+        const netScoreEnd = process.hrtime(netScoreStart);
+        const netScoreLatency = (netScoreEnd[0] * 1e9 + netScoreEnd[1]) / 1e9; // Convert to seconds
 
-        const netScore_Latency = busFactor_latency + rm_latency + license_latency + rampUp_latency + correctness_latency;
-    
+        // Return evaluation results for logging/output
         return {
             URL: url,
-            NetScore: netScore.toFixed(3),
-            NetScore_Latency: netScore_Latency.toFixed(3),
+            NetScore: netScore.score.toFixed(3),
+            NetScore_Latency: netScoreLatency.toFixed(3),
             BusFactor: busFactor.toFixed(3),
-            BusFactor_Latency: busFactor_latency.toFixed(3),
-            ResponsiveMaintainer: rm.toFixed(3),
-            ResponsiveMaintainer_Latency: rm_latency.toFixed(3),
+            BusFactor_Latency: busFactorLatency.toFixed(3),
+            ResponsiveMaintainer: responsiveMaintainer.toFixed(3),
+            ResponsiveMaintainer_Latency: rmLatency.toFixed(3),
             RampUp: rampUp.toFixed(3),
-            RampUp_Latency: rampUp_latency.toFixed(3),
+            RampUp_Latency: rampUpLatency.toFixed(3),
             Correctness: correctness.toFixed(3),
-            Correctness_Latency: correctness_latency.toFixed(3),
+            Correctness_Latency: correctnessLatency.toFixed(3),
             License: license.toFixed(3),
-            License_Latency: license_latency.toFixed(3)
+            License_Latency: licenseLatency.toFixed(3)
         };
+    }
+
+    private writeResults(result: Record<string, any>): void {
+        // Write each result in NDJSON format to the output file
+        fs.appendFileSync(this.outputFile, JSON.stringify(result) + '\n', 'utf8');
     }
 }
 
