@@ -1,42 +1,9 @@
+import { BusFactorMetric } from '../src/metrics/BusFactorMetric';
 import { GitHubApi } from '../lib/api/GitHubApi';
 
 // Mock the GitHubApi to prevent actual API calls during testing.
 // This replaces the real implementation of GitHubApi with a mock.
 jest.mock('../lib/api/GitHubApi');
-
-/**
- * Class to calculate the Bus Factor of a GitHub repository
- * Bus Factor measures how many contributors are working on the repository,
- * and evaluates the project's risk if some of them stop contributing.
- */
-class BusFactorMetric {
-  private api: GitHubApi;  // Instance of the GitHubApi class to interact with GitHub API
-
-  constructor() {
-    // Initialize GitHubApi instance
-    this.api = new GitHubApi();
-  }
-
-  /**
-   * Calculates the Bus Factor for a given GitHub repository.
-   * @param repo - The GitHub repository in the form of 'owner/repo'.
-   * @returns A score between 0 and 1 indicating the Bus Factor, where higher is better.
-   */
-  async calculate(repo: string): Promise<number> {
-    try {
-      // Fetch contributors from the GitHub API for the given repository
-      const contributors = await this.api.get(`/repos/${repo}/contributors`);
-
-      // Calculate Bus Factor as the number of contributors divided by 10, capped at 1.
-      // If no contributors, return 0.
-      return Array.isArray(contributors) ? Math.min(contributors.length / 10, 1) : 0;
-    } catch (error) {
-      // Log and rethrow any errors that occur during the calculation process
-      console.error('Error calculating Bus Factor:', error);
-      throw error;
-    }
-  }
-}
 
 // Test suite for the BusFactorMetric class
 describe('BusFactorMetric', () => {
