@@ -5,7 +5,6 @@ void processUrlsFromFile(String urlFile, String outputFile) async {
   try {
     // Check if the URL file exists
     if (!File(urlFile).existsSync()) {
-      print("Error: File at '$urlFile' does not exist.");
       exit(1);
     }
 
@@ -18,14 +17,11 @@ void processUrlsFromFile(String urlFile, String outputFile) async {
 
     // Check if the TypeScript execution was successful
     if (result.exitCode == 0) {
-      print("Results successfully saved to $outputFile");
       exit(0); // Exit with success
     } else {
-      print("Error processing URLs: ${result.stderr}");
       exit(1); // Exit with failure
     }
   } catch (e) {
-    print("Error reading file $urlFile: $e");
     exit(1); // Exit with failure
   }
 }
