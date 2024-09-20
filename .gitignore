@@ -25,6 +25,8 @@ dist/
 *.env
 .env.*
 output.NDJSON
+logs/
+system.log
 
 # Ignore node_modules and package files
 package.json
