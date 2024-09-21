@@ -12,7 +12,6 @@ export class License extends Metric {
     private compatibleLicenses: string[]; // List of compatible licenses
     private repoPath: string; // Path to the repository on the local filesystem
     private repoUrl: string; // The repository URL
-    public score: number; // Ensure score is of type number
 
     constructor(Url: string, compatibleLicenses: string[] = ['LGPLv2.1', 'MIT', 'Apache-2.0']) {
         SystemLogger.info(`License initialized with URL: ${Url}`);
@@ -30,14 +29,9 @@ export class License extends Metric {
     }
 
     private async init(): Promise<void> {
-        this.score = await this.checkLicenseStatus();
+        this.score = await this.checkCompatibilityWithLicenses();
         SystemLogger.info(`License score initialized to: ${this.score}`);
         this.cleanUpRepo(); // Clean up the cloned repository
-    }
-
-    // Method to check the license status
-    private checkLicenseStatus(): Promise<number> {
-        return this.checkCompatibilityWithLicenses(); // Check compatibility if valid and not expired
     }
 
     private async checkCompatibilityWithLicenses(): Promise<number> {
