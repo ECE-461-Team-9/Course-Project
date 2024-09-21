@@ -70,7 +70,7 @@ export class URLProcessor {
         const rmStart = process.hrtime();
         const tRM = new RM(url);
         await tRM.init();
-        const responsiveMaintainer = await tRM.getScore();
+        const responsiveMaintainer = tRM.getScore();
         const rmEnd = process.hrtime(rmStart);
         const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
     
@@ -78,7 +78,7 @@ export class URLProcessor {
         const licenseStart = process.hrtime();
         const tlicense = new License(url);
         await tlicense.init();
-        const license = await tlicense.getScore();
+        const license = tlicense.getScore();
         const licenseEnd = process.hrtime(licenseStart);
         const licenseLatency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
     

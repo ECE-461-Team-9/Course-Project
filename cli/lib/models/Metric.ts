@@ -9,9 +9,9 @@ export class Metric {
         this.score = 0;
     }
 
-    getScore(): Promise<number> {
+    getScore():number {
         console.log("Score: " + this.score);
-        return Promise.resolve(this.score);
+        return this.score;
     }
 
     updateScore(newScore: number): void {
