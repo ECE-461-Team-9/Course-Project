@@ -59,7 +59,7 @@ class Router {
         });
         break;
 
-      case 'test suite':
+      case 'test':
         print('Running test suite...');
         // Add your test suite execution logic here
         break;
@@ -67,7 +67,8 @@ class Router {
       default:
         // Ensure that exactly one argument (URL_FILE) is provided
         if (_arguments.length != 1) {
-          print('Error: Exactly one argument (URL_FILE) is required for default case.');
+          print(
+              'Error: Exactly one argument (URL_FILE) is required for default case.');
           exit(1); // Exit with failure
         }
 
@@ -85,7 +86,6 @@ class Router {
           // File exists, proceed with reading
           processUrlsFromFile(urlFile, 'output.NDJSON');
           print('Successfully read URLs from "$urlFile".');
-
         } catch (e) {
           print('Error reading file at "$urlFile": $e');
           exit(1); // Exit with failure
@@ -94,5 +94,4 @@ class Router {
         break;
     }
   }
-
 }
