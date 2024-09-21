@@ -22,13 +22,12 @@ export class BusFactor extends Metric {
       return [parts[3], parts[4]];
     }
   
-    async getScore(): Promise<number> {
+    async init(): Promise<void> {
       try {
           const contributors = await this.fetchContributors();
           // console.log(contributors)
           // console.log(commits)
           this.score = this.calculateBusFactor(contributors);
-          return this.score;
       } catch (error) {
           throw error;
       }
