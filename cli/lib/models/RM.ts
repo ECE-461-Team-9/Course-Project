@@ -1,9 +1,8 @@
 import { Metric } from './Metric';
-import { GitHubApi } from '../api/GitHubApi';
+import { GitHubApi } from '../api/Api';
 import { SystemLogger } from '../utilities/logger';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
+process.env;
 SystemLogger.initialize();
 
 interface RepoData {
@@ -21,28 +20,21 @@ interface IssueOrPR {
 export class RM extends Metric {
     private githubApi: GitHubApi;
     private owner: string;
-    private repo: string;
 
-    constructor(Url: string) {
-        SystemLogger.info(`RM initialized with URL: ${Url}`);
-        super(Url);
+    constructor(URL: string) {
+        SystemLogger.info(`RM initialized with URL: ${URL}`);
+        super(URL);
         this.githubApi = new GitHubApi();
         this.score = 0;
-        [this.owner, this.repo] = this.parseGitHubUrl(Url);
+        [this.owner, this.URL] = this.parseGitHubUrl();
     }
 
-    private parseGitHubUrl(url: string): [string, string] {
-        const parts = url.split('/');
+    private parseGitHubUrl(): [string, string] {
+        const parts = this.URL.split('/');
         return [parts[3], parts[4]];
     }
 
-    public static async create(Url: string): Promise<RM> {
-        const rm = new RM(Url);
-        await rm.init(); // Wait for async initialization
-        return rm;
-    }
-
-    private async init(): Promise<void> {
+    public async init(): Promise<void> {
         this.score = await this.calculateScore();
         SystemLogger.info(`RM score initialized to: ${this.score}`);
     }
@@ -52,14 +44,14 @@ export class RM extends Metric {
      */
     async calculateScore(): Promise<number> {
         try {
-            const endpoint = `/repos/${this.owner}/${this.repo}`;
+            const endpoint = `/repos/${this.owner}/${this.URL}`;
             const repoData = await this.githubApi.get(endpoint) as unknown as RepoData;
 
             // Fetch open issues and pull requests data
-            const issuesEndpoint = `/repos/${this.owner}/${this.repo}/issues?state=open&per_page=100`;
+            const issuesEndpoint = `/repos/${this.owner}/${this.URL}/issues?state=open&per_page=100`;
             const openIssues = await this.githubApi.get(issuesEndpoint) as unknown as IssueOrPR[];
             
-            const prsEndpoint = `/repos/${this.owner}/${this.repo}/pulls?state=open&per_page=100`;
+            const prsEndpoint = `/repos/${this.owner}/${this.URL}/pulls?state=open&per_page=100`;
             const openPRs = await this.githubApi.get(prsEndpoint) as unknown as IssueOrPR[];
 
             // Filter out bot-created PRs

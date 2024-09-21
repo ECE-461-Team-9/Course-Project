@@ -3,38 +3,29 @@ import * as fs from 'fs';
 import * as http from 'isomorphic-git/http/node';
 import { Metric } from './Metric';
 import { SystemLogger } from '../utilities/logger';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
+process.env;
 SystemLogger.initialize();
 
 export class License extends Metric {
     private compatibleLicenses: string[]; // List of compatible licenses
     private repoPath: string; // Path to the repository on the local filesystem
-    private repoUrl: string; // The repository URL
 
-    constructor(Url: string, compatibleLicenses: string[] = ['LGPLv2.1', 'MIT', 'Apache-2.0']) {
-        SystemLogger.info(`License initialized with URL: ${Url}`);
-        super(Url);
+    constructor(URL: string, compatibleLicenses: string[] = ['LGPLv2.1', 'MIT', 'Apache-2.0']) {
+        SystemLogger.info(`License initialized with URL: ${URL}`);
+        super(URL);
         this.repoPath = '/home/shay/a/chen3900/Documents/ECE461/Leo-461-Course-Project/test'; // Set repoPath to './test'
-        this.repoUrl = Url; // Initialize repoUrl with the provided URL
         this.compatibleLicenses = compatibleLicenses; // Initialize the list of compatible licenses
         this.score = 0; // Initialize score with a default number value
     }
 
-    public static async create(Url: string): Promise<License> {
-        const license = new License(Url);
-        await license.init(); // Wait for async initialization
-        return license;
-    }
-
-    private async init(): Promise<void> {
-        this.score = await this.checkCompatibilityWithLicenses();
+    public async init(): Promise<void> {
+        this.score = await this.checkCompatibilityWithLicenses(this.URL);
         SystemLogger.info(`License score initialized to: ${this.score}`);
         this.cleanUpRepo(); // Clean up the cloned repository
     }
 
-    private async checkCompatibilityWithLicenses(): Promise<number> {
+    private async checkCompatibilityWithLicenses(Url: string): Promise<number> {
         try {
             // Initialize the repository in the 'test' folder
             SystemLogger.info(`Initializing repository in ${this.repoPath}`);
@@ -43,15 +34,13 @@ export class License extends Metric {
                 dir: this.repoPath, // Initialize the repository in './test'
                 defaultBranch: 'main',
             });
-
-            SystemLogger.info(`Cloning repository from ${this.repoUrl}`);
     
             // Clone the repository to the 'test' folder
             await git.clone({
                 fs,
                 http, // Use http for HTTP and HTTPS requests
                 dir: this.repoPath, // Clone into './test'
-                url: this.repoUrl,
+                url: Url,
                 depth: 1, // Fetch only the latest commit
             });
 

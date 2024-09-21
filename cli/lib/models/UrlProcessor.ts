@@ -3,7 +3,6 @@ import * as readline from 'readline';
 import { BusFactor } from './BusFactor';
 import { RM } from './RM';
 import { License } from './License';
-import { NetScore } from './NetScore';
 import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
 import { FilePath } from '../typedefs/definitions'; // Assuming FilePath is imported from here
@@ -69,20 +68,17 @@ export class URLProcessor {
     
         // ResponsiveMaintainer (RM) latency
         const rmStart = process.hrtime();
-        // const responsiveMaintainer = 1;
-        SystemLogger.info(`Creating RM for URL: ${url}`);
-        const tRM = await RM.create(url);
-        SystemLogger.info(`RM created for URL: ${url}`);
+        const tRM = new RM(url);
+        await tRM.init();
         const responsiveMaintainer = tRM.getScore();
-        SystemLogger.info(`RM score: ${responsiveMaintainer}`);
         const rmEnd = process.hrtime(rmStart);
         const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
     
         // License latency
         const licenseStart = process.hrtime();
-        const tlicense = await License.create(url);
+        const tlicense = new License(url);
+        await tlicense.init();
         const license = tlicense.getScore();
-        SystemLogger.info(`License score: ${license}`);
         const licenseEnd = process.hrtime(licenseStart);
         const licenseLatency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
     
@@ -101,20 +97,13 @@ export class URLProcessor {
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
     
         // NetScore latency
-        const netScore = new NetScore({
-            rampUp, 
-            busFactor, 
-            correctness, 
-            responsiveMaintainer, 
-            license,
-            filepath: this.outputFile as FilePath // Pass the output file path for logging
-        });
+        const netScore = license * (0.4 * responsiveMaintainer + 0.2 * busFactor + 0.2 * rampUp + 0.2 * correctness);
         const netScoreLatency = busFactorLatency + rmLatency + licenseLatency + rampUpLatency + correctnessLatency; // Convert to seconds
 
         // Return evaluation results for logging/output
         return {
             URL: url,
-            NetScore: netScore.score.toFixed(3),
+            NetScore: netScore.toFixed(3),
             NetScore_Latency: netScoreLatency.toFixed(3),
             BusFactor: busFactor.toFixed(3),
             BusFactor_Latency: busFactorLatency.toFixed(3),

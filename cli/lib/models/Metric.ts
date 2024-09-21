@@ -9,7 +9,7 @@ export class Metric {
         this.score = 0;
     }
 
-    getScore(): number {
+    getScore():number {
         console.log("Score: " + this.score);
         return this.score;
     }
