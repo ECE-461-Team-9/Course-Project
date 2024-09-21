@@ -18,9 +18,9 @@
   "jest": {
     "preset": "ts-jest",
     "testMatch": [
-      "**/tests/**/*.test.ts",        
-      "**/tests/**/*.spec.ts",        
-      "**/tests/**/*.ts"              
+      "**/tests/**/*.test.ts",
+      "**/tests/**/*.spec.ts",
+      "**/tests/**/*.ts"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/"

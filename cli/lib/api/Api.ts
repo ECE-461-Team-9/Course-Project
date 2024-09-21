@@ -54,4 +54,21 @@ class GitHubApi extends API {
     }
 }
 
-export { GitHubApi };
+/**
+ * NpmApi class
+ * @class NpmApi
+ * @extends API
+ * @param {ApiArgs} args
+ * @param {Url} args.url - URL to make the request
+ * @example
+ * const npmApi = new NpmApi();
+ * const response = await npmApi.get('/octocat');
+ * console.log(response);
+ */
+class NpmApi extends API {
+    constructor() {
+        super({ url: 'https://registry.npmjs.org' });
+    }
+}
+
+export { GitHubApi, NpmApi };
