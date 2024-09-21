@@ -69,8 +69,12 @@ export class URLProcessor {
     
         // ResponsiveMaintainer (RM) latency
         const rmStart = process.hrtime();
-        //const responsiveMaintainer = new RM(url).getScore();
-        const responsiveMaintainer = 1;
+        // const responsiveMaintainer = 1;
+        SystemLogger.info(`Creating RM for URL: ${url}`);
+        const tRM = await RM.create(url);
+        SystemLogger.info(`RM created for URL: ${url}`);
+        const responsiveMaintainer = tRM.getScore();
+        SystemLogger.info(`RM score: ${responsiveMaintainer}`);
         const rmEnd = process.hrtime(rmStart);
         const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
     
@@ -97,7 +101,6 @@ export class URLProcessor {
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
     
         // NetScore latency
-        const netScoreStart = process.hrtime();
         const netScore = new NetScore({
             rampUp, 
             busFactor, 
@@ -106,8 +109,7 @@ export class URLProcessor {
             license,
             filepath: this.outputFile as FilePath // Pass the output file path for logging
         });
-        const netScoreEnd = process.hrtime(netScoreStart);
-        const netScoreLatency = (netScoreEnd[0] * 1e9 + netScoreEnd[1]) / 1e9; // Convert to seconds
+        const netScoreLatency = busFactorLatency + rmLatency + licenseLatency + rampUpLatency + correctnessLatency; // Convert to seconds
 
         // Return evaluation results for logging/output
         return {
