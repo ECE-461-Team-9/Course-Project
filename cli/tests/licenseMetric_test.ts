@@ -33,7 +33,7 @@ describe('License', () => {
     expect(score).toBe(1); // Assert that the score is 1 when a compatible license is found
   });
 
-  // Test case: License score should be 0 when no compatible license is found in the LICENSE file
+  // Test case: License score should be 0 when we find no compatible license is found in the LICENSE file
   test('should return 0 when no compatible license is found in the LICENSE file', async () => {
     // Mock fs.existsSync to simulate a LICENSE file existing in the repo
     (fs.existsSync as jest.Mock).mockReturnValue(true);
