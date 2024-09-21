@@ -7,6 +7,12 @@ import { NetScore } from './NetScore';
 import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
 import { FilePath } from '../typedefs/definitions'; // Assuming FilePath is imported from here
+import { SystemLogger } from '../utilities/logger';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+SystemLogger.initialize();
 
 export class URLProcessor {
     private urlFile: string;
@@ -15,9 +21,21 @@ export class URLProcessor {
     constructor(urlFile: string, outputFile: string) {
         this.urlFile = urlFile;
         this.outputFile = outputFile;
+
+        // Clear the output file when the class is instantiated
+        this.clearOutputFile();
+    }
+
+    // Method to clear the output file
+    private clearOutputFile(): void {
+        try {
+            fs.writeFileSync(this.outputFile, ''); // Overwrite the file with an empty string
+        } catch (error) {
+        }
     }
 
     public async processUrlsFromFile(): Promise<void> {
+        SystemLogger.info(`Processing URLs from file: ${this.urlFile}\n\n\n\n`);
         try {
             if (!fs.existsSync(this.urlFile)) {
                 throw new Error(`File at "${this.urlFile}" does not exist.`);
@@ -29,23 +47,19 @@ export class URLProcessor {
                 crlfDelay: Infinity
             });
 
-            console.log(`Processing URLs from "${this.urlFile}"...`);
-
             for await (const line of rl) {
                 const url = line.trim();
-                const evaluationResults = this.evaluateUrl(url);
+                const evaluationResults = await this.evaluateUrl(url);
                 this.writeResults(evaluationResults);
             }
 
-            console.log(`Successfully processed URLs. Output written to "${this.outputFile}".`);
-
         } catch (error) {
-            console.error('Error processing file');
             process.exit(1); // Signal failure
         }
     }
 
-    private evaluateUrl(url: string): Record<string, any> {
+    private async evaluateUrl(url: string): Promise<Record<string, any>> {
+        SystemLogger.info(`Evaluating URL: ${url}`);
         // BusFactor latency
         const busFactorStart = process.hrtime();
         //const busFactor = new BusFactor(url).getScore();
@@ -55,15 +69,20 @@ export class URLProcessor {
     
         // ResponsiveMaintainer (RM) latency
         const rmStart = process.hrtime();
-        //const responsiveMaintainer = new RM(url).getScore();
-        const responsiveMaintainer = 1;
+        // const responsiveMaintainer = 1;
+        SystemLogger.info(`Creating RM for URL: ${url}`);
+        const tRM = await RM.create(url);
+        SystemLogger.info(`RM created for URL: ${url}`);
+        const responsiveMaintainer = tRM.getScore();
+        SystemLogger.info(`RM score: ${responsiveMaintainer}`);
         const rmEnd = process.hrtime(rmStart);
         const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
     
         // License latency
         const licenseStart = process.hrtime();
-        //const license = new License(url).getScore();
-        const license = 1;
+        const tlicense = await License.create(url);
+        const license = tlicense.getScore();
+        SystemLogger.info(`License score: ${license}`);
         const licenseEnd = process.hrtime(licenseStart);
         const licenseLatency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
     
@@ -82,7 +101,6 @@ export class URLProcessor {
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
     
         // NetScore latency
-        const netScoreStart = process.hrtime();
         const netScore = new NetScore({
             rampUp, 
             busFactor, 
@@ -91,8 +109,7 @@ export class URLProcessor {
             license,
             filepath: this.outputFile as FilePath // Pass the output file path for logging
         });
-        const netScoreEnd = process.hrtime(netScoreStart);
-        const netScoreLatency = (netScoreEnd[0] * 1e9 + netScoreEnd[1]) / 1e9; // Convert to seconds
+        const netScoreLatency = busFactorLatency + rmLatency + licenseLatency + rampUpLatency + correctnessLatency; // Convert to seconds
 
         // Return evaluation results for logging/output
         return {
