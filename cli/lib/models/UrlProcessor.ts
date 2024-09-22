@@ -7,11 +7,7 @@ import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
 import { SystemLogger } from '../utilities/logger';
 import * as dotenv from 'dotenv';
-<<<<<<< HEAD
-import { stdout } from 'process';
-=======
 import { NpmApi } from '../api/Api';
->>>>>>> 2b5dde0106df7adc901413b8b7d7875ca79ec109
 
 // Load environment variables from .env file
 dotenv.config();    
@@ -52,14 +48,8 @@ export class URLProcessor {
 
             for await (const line of rl) {
                 const url = line.trim();
-<<<<<<< HEAD
-                //need to convert npm to github
-                /* Fill out */
-                const evaluationResults = await this.evaluateUrl(url);
-=======
                 const githubUrl = await this.determineLinkType(url);
                 const evaluationResults = await this.evaluateUrl(githubUrl);
->>>>>>> 2b5dde0106df7adc901413b8b7d7875ca79ec109
                 this.writeResults(evaluationResults);
             }
 
@@ -156,7 +146,7 @@ export class URLProcessor {
         const formattedResult = JSON.stringify(result);
         // Write each result in NDJSON format to the output file
         fs.appendFileSync(this.outputFile, formattedResult + '\n', 'utf8');
-        stdout.write(formattedResult);
+        console.log(formattedResult);
     }
 }
 

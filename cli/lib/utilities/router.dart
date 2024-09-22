@@ -53,14 +53,9 @@ class Router {
         });
         break;
 
-<<<<<<< HEAD
-      case 'test suite':
-        // Add your test suite execution logic here
-=======
       case 'test':
         print('Running test suite...');
         _runTestSuite();
->>>>>>> 2b5dde0106df7adc901413b8b7d7875ca79ec109
         break;
 
       default:
@@ -84,11 +79,7 @@ class Router {
 
           // File exists, proceed with reading
           processUrlsFromFile(urlFile, 'output.NDJSON');
-<<<<<<< HEAD
-
-=======
-          print('Successfully read URLs from "$urlFile".');
->>>>>>> 2b5dde0106df7adc901413b8b7d7875ca79ec109
+          // print('Successfully read URLs from "$urlFile".');
         } catch (e) {
           print('Error reading file at "$urlFile": $e');
           exit(1); // Exit with failure
