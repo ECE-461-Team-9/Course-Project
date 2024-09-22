@@ -15,14 +15,14 @@ export class Correctness extends Metric {
     constructor(Url: string) {
         SystemLogger.info(`Correctness initialized with URL: ${Url}`);
         super(Url);
-        this.repoPath = '/tmp/repo-correctness';
+        this.repoPath = '/home/shay/a/smit4407/Documents/Course-Project-461/test';
         this.score = 0;
     }
 
     async init(): Promise<void> {
         await this.cloneRepository();
         this.score = await this.checkCorrectness();
-        this.cleanUpRepo();
+        // this.cleanUpRepo();
     }
 
     private async cloneRepository(): Promise<void> {
@@ -44,11 +44,15 @@ export class Correctness extends Metric {
     private async checkCorrectness(): Promise<number> {
         try {
             //checks if the pack
+            let score = 0;
+
             const hasTests = this.detectTestFramework();
+            console.log(hasTests);
             if (!hasTests) {
                 SystemLogger.info('No tests detected in the repository');
                 return 0;
             }
+            score = 0.25;
 
             const testResults = this.runTests();
             return this.calculateScore(testResults);
@@ -63,6 +67,11 @@ export class Correctness extends Metric {
         if (fs.existsSync(packageJsonPath)) {
             //allows to parse with json
             const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+            if (packageJson.scripts.test) {
+                return true;
+            }
+
             //get devDependencies and depnedencies
             const devDependencies = packageJson.devDependencies || {};
             const dependencies = packageJson.dependencies || {};
@@ -79,22 +88,35 @@ export class Correctness extends Metric {
     private runTests(): { passed: number, total: number } {
         try {
             //go to main root
+            console.log('Starting test process');
             process.chdir(this.repoPath);
-            execSync('npm install', { stdio: 'ignore' });
-            const testOutput = execSync('npm test', { encoding: 'utf-8' });
+
+            console.log('Installing dependencies');
+            execSync('npm install', { stdio: 'inherit' });
+
+            console.log('Running tests');
+            const testOutput = execSync('npx jest --json', { encoding: 'utf-8', stdio: 'pipe' });
+
+            console.log(testOutput);
             
             // This is a simple regex to match "X passing" and "Y failing".
             // You might need to adjust this based on the actual output format.
-            const passingMatch = testOutput.match(/(\d+)\s+passing/);
-            const failingMatch = testOutput.match(/(\d+)\s+failing/);
+            const passingMatch = testOutput.match(/.*PassedTests":(\d+).*/);
+            const failingMatch = testOutput.match(/.*FailedTests":(\d+).*/);
+
+            console.log('ending');
+
             
             //1 is the first captured group, so the int
             const passed = passingMatch ? parseInt(passingMatch[1]) : 0;
             const failed = failingMatch ? parseInt(failingMatch[1]) : 0;
+            console.log(passed);
+            console.log(failed);
             const total = passed + failed;
 
             return { passed, total };
         } catch (error) {
+            console.log(error);
             SystemLogger.error(`Error running tests: ${error}`);
             return { passed: 0, total: 0 };
         }
@@ -117,4 +139,3 @@ export class Correctness extends Metric {
         }
     }
 }
-
