@@ -9,11 +9,8 @@ void processUrlsFromFile(String urlFile, String outputFile) async {
     }
 
     // Execute the TypeScript file using ts-node
-    final result = await Process.run('ts-node', [
-      'cli/lib/models/UrlProcessor.ts', // Replace with the correct path to your TypeScript file
-      urlFile,
-      outputFile
-    ]);
+    final result = await Process.run('npx',
+        ['ts-node', 'cli/lib/models/UrlProcessor.ts', urlFile, outputFile]);
 
     print(result.stdout); // Print the output of the TypeScript execution
 
