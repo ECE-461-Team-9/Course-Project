@@ -81,7 +81,7 @@ describe('End-to-End Test for NetScore Calculation via CLI', () => {
       expect(stderr).toContain('Error: Invalid input file format');
 
       // Check that no logs were written for invalid input
-      expect(fs.existsSync(LOG_FILE)).toBe(false);  // This will now correctly return false
+      expect(fs.existsSync(LOG_FILE)).toBe(false);  
 
       done();
     });
