@@ -75,7 +75,7 @@ export class BusFactor extends Metric {
       console.log(totalContributions)
 
     
-      halfTotalContributions = totalContributions / 2;
+      halfTotalContributions = totalContributions * 0.6;
     
       // Calculate bus factor
       let cumulativeContributions = 0;
