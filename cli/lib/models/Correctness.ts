@@ -27,7 +27,7 @@ export class Correctness extends Metric {
         SystemLogger.info(`Correctness initialized with URL: ${Url}`);
         super(Url);
         this.githubApi = new GitHubApi();
-        this.repoPath = '/home/shay/a/smit4407/Documents/Course-Project-461/test';
+        this.repoPath = `${process.cwd()}/test`;
         this.score = 0;
         [this.owner, this.repo] = this.parseGitHubUrl();
     }
