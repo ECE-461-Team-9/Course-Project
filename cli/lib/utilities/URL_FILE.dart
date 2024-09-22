@@ -15,6 +15,8 @@ void processUrlsFromFile(String urlFile, String outputFile) async {
       outputFile
     ]);
 
+    print(result.stdout); // Print the output of the TypeScript execution
+
     // Check if the TypeScript execution was successful
     if (result.exitCode == 0) {
       exit(0); // Exit with success

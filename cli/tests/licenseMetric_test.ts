@@ -29,18 +29,18 @@ describe('License', () => {
     (fs.readFileSync as jest.Mock).mockReturnValue('This project is licensed under the MIT License.');
 
     // Call the private checkCompatibilityWithLicenses method using 'as any'
-    const score = await (license as any).checkCompatibilityWithLicenses();
+    const score = await (license as any).checkCompatibilityWithLicenses(repoUrl); // Pass repoUrl to avoid undefined url issue
     expect(score).toBe(1); // Assert that the score is 1 when a compatible license is found
   });
 
-  // Test case: License score should be 0 when we find no compatible license is found in the LICENSE file
+  // Test case: License score should be 0 when no compatible license is found in the LICENSE file
   test('should return 0 when no compatible license is found in the LICENSE file', async () => {
     // Mock fs.existsSync to simulate a LICENSE file existing in the repo
     (fs.existsSync as jest.Mock).mockReturnValue(true);
     // Mock fs.readFileSync to return content with an incompatible license
     (fs.readFileSync as jest.Mock).mockReturnValue('This project is licensed under the GPL-3.0 License.');
 
-    const score = await (license as any).checkCompatibilityWithLicenses();
+    const score = await (license as any).checkCompatibilityWithLicenses(repoUrl); // Pass repoUrl to avoid undefined url issue
     expect(score).toBe(0); // Assert that the score is 0 when no compatible license is found
   });
 
@@ -51,7 +51,7 @@ describe('License', () => {
     // Mock fs.readFileSync to return content with a compatible license in the README file (LGPLv2.1)
     (fs.readFileSync as jest.Mock).mockReturnValue('This project is licensed under the LGPLv2.1 License.');
 
-    const score = await (license as any).checkCompatibilityWithLicenses();
+    const score = await (license as any).checkCompatibilityWithLicenses(repoUrl); // Pass repoUrl to avoid undefined url issue
     expect(score).toBe(1); // Assert that the score is 1 when a compatible license is found in README
   });
 
@@ -62,7 +62,7 @@ describe('License', () => {
     // Mock fs.readFileSync to return content with an incompatible license in both files
     (fs.readFileSync as jest.Mock).mockReturnValue('This project is licensed under the GPL-3.0 License.');
 
-    const score = await (license as any).checkCompatibilityWithLicenses();
+    const score = await (license as any).checkCompatibilityWithLicenses(repoUrl); // Pass repoUrl to avoid undefined url issue
     expect(score).toBe(0); // Assert that the score is 0 when no compatible license is found in either file
   });
 
@@ -72,7 +72,7 @@ describe('License', () => {
     (git.init as jest.Mock).mockResolvedValue(undefined);
     (git.clone as jest.Mock).mockResolvedValue(undefined);
 
-    await (license as any).checkCompatibilityWithLicenses();
+    await (license as any).checkCompatibilityWithLicenses(repoUrl); // Pass repoUrl to avoid undefined url issue
     expect(git.init).toHaveBeenCalledWith({
       fs,
       dir: repoPath,
@@ -82,7 +82,7 @@ describe('License', () => {
       fs,
       http,
       dir: repoPath,
-      url: repoUrl,
+      url: repoUrl, 
       depth: 1,
     });
   });
@@ -103,7 +103,7 @@ describe('License', () => {
     // Mock fs.existsSync to simulate neither LICENSE nor README file existing
     (fs.existsSync as jest.Mock).mockReturnValue(false);
 
-    const score = await (license as any).checkCompatibilityWithLicenses();
+    const score = await (license as any).checkCompatibilityWithLicenses(repoUrl); // Pass repoUrl to avoid undefined url issue
     expect(score).toBe(0); // Assert that the score is 0 when no LICENSE or README is found
   });
 });

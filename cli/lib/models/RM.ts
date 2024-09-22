@@ -1,8 +1,10 @@
 import { Metric } from './Metric';
 import { GitHubApi } from '../api/Api';
 import { SystemLogger } from '../utilities/logger';
+import * as dotenv from 'dotenv';
 
-process.env;
+// Load environment variables from .env file
+dotenv.config();
 SystemLogger.initialize();
 
 interface RepoData {
@@ -24,9 +26,19 @@ export class RM extends Metric {
     constructor(URL: string) {
         SystemLogger.info(`RM initialized with URL: ${URL}`);
         super(URL);
-        this.githubApi = new GitHubApi();
-        this.score = 0;
-        [this.owner, this.URL] = this.parseGitHubUrl();
+        try {
+            this.githubApi = new GitHubApi();
+            if (!this.githubApi) {
+                SystemLogger.error('API Error');
+                throw new Error('API Error');
+            }
+
+            this.score = 0;
+            [this.owner, this.URL] = this.parseGitHubUrl();
+        } catch (error) {
+            SystemLogger.error('Error initializing RM');
+            throw error;
+        }
     }
 
     private parseGitHubUrl(): [string, string] {
@@ -47,23 +59,14 @@ export class RM extends Metric {
             const endpoint = `/repos/${this.owner}/${this.URL}`;
             const repoData = await this.githubApi.get(endpoint) as unknown as RepoData;
 
-            // Fetch open issues and pull requests data
-            const issuesEndpoint = `/repos/${this.owner}/${this.URL}/issues?state=open&per_page=100`;
-            const openIssues = await this.githubApi.get(issuesEndpoint) as unknown as IssueOrPR[];
+            // Fetch open issues and PRs using the new fetchIssueData function
+            const { openIssues, filteredPRs } = await this.fetchIssueData();
             
-            const prsEndpoint = `/repos/${this.owner}/${this.URL}/pulls?state=open&per_page=100`;
-            const openPRs = await this.githubApi.get(prsEndpoint) as unknown as IssueOrPR[];
-
-            // Filter out bot-created PRs
-            const filteredPRs = openPRs.filter(pr => pr.user.type !== 'Bot');
-
-            // Metrics to be used for the RM score calculation
-            SystemLogger.info(`Repo data: ${JSON.stringify(repoData)}`);
             const lastCommitDate = await this.getLastCommitDate(repoData);
 
             // Calculate individual scores based on chosen metrics
-            const issueAgeScore = this.calculateIssueOrPRAgeScore(openIssues); // Score based on issue age
-            const prAgeScore = this.calculateIssueOrPRAgeScore(filteredPRs); // Score based on PR age
+            const issueAgeScore = this.calculateIssueOrPRAgeScore(openIssues);
+            const prAgeScore = this.calculateIssueOrPRAgeScore(filteredPRs);
             const recentCommitScore = this.calculateRecencyScore(lastCommitDate);
 
             // Average out the scores with a weighted distribution
@@ -74,6 +77,30 @@ export class RM extends Metric {
         } catch (error) {
             SystemLogger.error('Error calculating RM score');
             return 0;
+        }
+    }
+
+    /**
+     * Fetch open issues and filtered PRs data from the repository.
+     * @returns {Promise<{openIssues: IssueOrPR[], filteredPRs: IssueOrPR[]}>}
+     */
+    private async fetchIssueData(): Promise<{ openIssues: IssueOrPR[], filteredPRs: IssueOrPR[] }> {
+        try {
+            // Fetch open issues data
+            const issuesEndpoint = `/repos/${this.owner}/${this.URL}/issues?state=open&per_page=100`;
+            const openIssues = await this.githubApi.get(issuesEndpoint) as IssueOrPR[];
+
+            // Fetch open pull requests data
+            const prsEndpoint = `/repos/${this.owner}/${this.URL}/pulls?state=open&per_page=100`;
+            const openPRs = await this.githubApi.get(prsEndpoint) as IssueOrPR[];
+
+            // Filter out bot-created PRs
+            const filteredPRs = openPRs.filter(pr => pr.user.type !== 'Bot');
+
+            return { openIssues, filteredPRs };
+        } catch (error) {
+            SystemLogger.error('Error fetching issue and PR data');
+            return { openIssues: [], filteredPRs: [] };
         }
     }
 
@@ -125,7 +152,7 @@ export class RM extends Metric {
     private calculateRecencyScore(lastCommitDate: Date): number {
         const today = new Date();
         const daysSinceLastCommit = (today.getTime() - lastCommitDate.getTime()) / (1000 * 60 * 60 * 24);
-        
+
         // Score decreases as days since last commit increases
         return Math.max(1 - daysSinceLastCommit / 365, 0);
     }

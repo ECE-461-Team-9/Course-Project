@@ -1,5 +1,6 @@
 import { Metric } from './Metric';
 import { GitHubApi } from '../api/Api';
+import { SystemLogger } from '../utilities/logger';
 
 interface Contributor {
   login: string;
@@ -11,37 +12,38 @@ export class BusFactor extends Metric {
     private owner: string;
     private repo: string;
 
-    constructor(url: string) {
-      super(url);
+    constructor(URL: string) {
+      super(URL);
       this.githubApi = new GitHubApi();
-      [this.owner, this.repo] = this.parseGitHubUrl(url);
+      [this.owner, this.repo] = this.parseGitHubUrl();
     }
   
-    private parseGitHubUrl(url: string): [string, string] {
-      const parts = url.split('/');
+    private parseGitHubUrl(): [string, string] {
+      const parts = this.URL.split('/');
       return [parts[3], parts[4]];
     }
   
     async init(): Promise<void> {
       try {
           const contributors = await this.fetchContributors();
-          // console.log(contributors)
-          // console.log(commits)
+          SystemLogger.info(`Contributors: ${contributors.length}`);
           this.score = this.calculateBusFactor(contributors);
+          SystemLogger.info(`Bus Factor score initialized to: ${this.score}`);
       } catch (error) {
+          SystemLogger.error(`Error initializing Bus Factor: ${error}`);
           throw error;
       }
     }
 
     //Contributers
     private async fetchContributors(): Promise<Contributor[]> {
-      const endpoint = `/repos/${this.owner}/${this.repo}/contributors?per_page=30`;
-      const response = await this.githubApi.get(endpoint) as Object [];
-      const contributors = response.map((contributor: any) => ({
-        login: contributor.login,
-        contributions: contributor.contributions
-      })) as Contributor[];
-      return contributors;
+        const endpoint = `/repos/${this.owner}/${this.repo}/contributors?per_page=30`;
+        const response = await this.githubApi.get(endpoint) as Object [];
+        const contributors = response.map((contributor: any) => ({
+          login: contributor.login,
+          contributions: contributor.contributions
+        })) as Contributor[];
+        return contributors;
     }
 
 
@@ -70,10 +72,6 @@ export class BusFactor extends Metric {
           break;
         }
       }
-
-      console.log(criticalContributors)
-      console.log(totalContributions)
-
     
       halfTotalContributions = totalContributions * 0.6;
     
@@ -86,6 +84,10 @@ export class BusFactor extends Metric {
           break;
         }
       }
+
+      SystemLogger.info(`Critical Contributors: ${criticalContributors}`);
+      SystemLogger.info(`Total Contributions: ${totalContributions}`);
+      SystemLogger.info(`busPeople: ${busPeople}`);
     
       return 1 - (busPeople / criticalContributors);
     }
