@@ -1,49 +1,72 @@
 import { NetScore } from '../lib/models/NetScore';
+import { SystemLogger } from '../lib/utilities/logger';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 
-describe('NetScore', () => {
-    let netScore: NetScore;
+// Load environment variables and initialize the logger
+dotenv.config();
+SystemLogger.initialize();
 
-    // Test case: Should return maximum score when all scores are 1
-    test('should return maximum score when all scores are 1', () => {
-        const scores = [1.0, 1.0, 1.0, 1.0, 1.0]; // License and other scores are 1
-        const weights = [0.4, 0.2, 0.2, 0.2, 0.0]; // Weights as per Sarah's priorities
-        const latencies = [100, 150, 200, 250, 300]; // Example latencies (5 elements)
+describe('End-to-End Test for NetScore Calculation', () => {
+  const mockURL = 'https://github.com/owner/repo';  // Mock URL
 
-        netScore = new NetScore('https://github.com/owner/repo', scores, weights, latencies);
+  beforeEach(() => {
+    // Clear any previous logs or mock data before running the test
+    jest.resetModules();
+    if (fs.existsSync(process.env.LOG_FILE!)) {
+      fs.unlinkSync(process.env.LOG_FILE!); // Remove old log file if exists
+    }
+  });
 
-        expect(netScore.score).toBe(1.0); // Maximum possible score
-    });
+  test('should correctly calculate NetScore for valid inputs', async () => {
+    // Define valid inputs based on Sarah's formula
+    const scores = [1, 0.9, 0.8, 0.7, 0.6]; // License, RM, other, BF, Correctness
+    const weights = [0.4, 0.2, 0.2, 0.2, 0.2]; // Weights for RM, BF, C, and RM again
+    const latencies = [0.01, 0.02, 0.03, 0.04, 0.05]; // Latency values for each metric
 
-    // Test case: Should return minimum score when license score is 0
-    test('should return minimum score when license score is 0', () => {
-        const scores = [0, 1.0, 1.0, 1.0, 1.0]; // License score is 0
-        const weights = [0.4, 0.2, 0.2, 0.2, 0.0]; // Weights as per Sarah's priorities
-        const latencies = [100, 150, 200, 250, 300]; // Example latencies (5 elements)
+    // Create a new instance of the NetScore class with the inputs
+    const netScore = new NetScore(mockURL, scores, weights, latencies);
 
-        netScore = new NetScore('https://github.com/owner/repo', scores, weights, latencies);
+    // Verify the calculated NetScore (expected result is based on Sarah’s formula)
+    const expectedScore = 1 * (0.4 * 0.9 + 0.2 * 0.7 + 0.2 * 0.6 + 0.2 * 0.9) * 0.8;
+    expect(netScore.score).toBeCloseTo(expectedScore, 3); // Allowing for rounding differences
 
-        expect(netScore.score).toBe(0); // Minimum possible score because license score is 0
-    });
+    // Verify the calculated latency (sum of latencies)
+    const expectedLatency = latencies.reduce((acc, curr) => acc + curr, 0).toFixed(3);
+    expect(netScore.getLatency()).toBe(parseFloat(expectedLatency));
 
-    // Test case: Should calculate latency correctly
-    test('should calculate latency correctly', () => {
-        const scores = [1.0, 1.0, 1.0, 1.0, 1.0]; // Example scores
-        const weights = [0.4, 0.2, 0.2, 0.2, 0.0]; // Example weights
-        const latencies = [100, 150, 200, 250, 300]; // Latency values (5 elements)
+    // Check the system logs for any logged messages
+    const logFilePath = process.env.LOG_FILE;
+    if (logFilePath && fs.existsSync(logFilePath)) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 200)); // Small delay to allow logs to be written
+      const logContent = fs.readFileSync(logFilePath, 'utf8');
+      expect(logContent).toContain('License initialized with URL');
+    }
+  });
 
-        netScore = new NetScore('https://github.com/owner/repo', scores, weights, latencies);
+  test('should handle a scenario where the license score is 0', async () => {
+    // Define inputs where the license is 0 (expected NetScore should be 0)
+    const scores = [0, 0.9, 0.8, 0.7, 0.6]; // License is 0
+    const weights = [0.4, 0.2, 0.2, 0.2, 0.2]; // Weights for RM, BF, C, and RM again
+    const latencies = [0.01, 0.02, 0.03, 0.04, 0.05]; // Latency values for each metric
 
-        expect(netScore.getLatency()).toBe(1000); // Total latency is the sum of latencies
-    });
+    // Create a new instance of the NetScore class with the inputs
+    const netScore = new NetScore(mockURL, scores, weights, latencies);
 
-    // Test case: Should return a lower score when "other" score is low
-    test('should return a lower score when "other" score is low', () => {
-        const scores = [1.0, 1.0, 0.5, 1.0, 1.0]; // "Other" score is 0.5
-        const weights = [0.4, 0.2, 0.2, 0.2, 0.0]; // Weights as per Sarah's priorities
-        const latencies = [100, 150, 200, 250, 300]; // Example latencies (5 elements)
+    // Verify the calculated NetScore (since license is 0, the expected result is 0)
+    expect(netScore.score).toBe(0);
 
-        netScore = new NetScore('https://github.com/owner/repo', scores, weights, latencies);
+    // Verify the calculated latency (sum of latencies)
+    const expectedLatency = latencies.reduce((acc, curr) => acc + curr, 0).toFixed(3);
+    expect(netScore.getLatency()).toBe(parseFloat(expectedLatency));
 
-        expect(netScore.score).toBeLessThan(1.0); // Expect a score lower than 1.0 due to "other" score being 0.5
-    });
+    // Check the system logs for any logged messages
+    const logFilePath = process.env.LOG_FILE;
+    if (logFilePath && fs.existsSync(logFilePath)) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 200)); // Small delay to allow logs to be written
+      const logContent = fs.readFileSync(logFilePath, 'utf8');
+      expect(logContent).toContain('License initialized with URL');
+    }
+  });
 });
