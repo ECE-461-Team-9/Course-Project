@@ -7,7 +7,11 @@ import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
 import { SystemLogger } from '../utilities/logger';
 import * as dotenv from 'dotenv';
+<<<<<<< HEAD
 import { stdout } from 'process';
+=======
+import { NpmApi } from '../api/Api';
+>>>>>>> 2b5dde0106df7adc901413b8b7d7875ca79ec109
 
 // Load environment variables from .env file
 dotenv.config();    
@@ -48,15 +52,38 @@ export class URLProcessor {
 
             for await (const line of rl) {
                 const url = line.trim();
+<<<<<<< HEAD
                 //need to convert npm to github
                 /* Fill out */
                 const evaluationResults = await this.evaluateUrl(url);
+=======
+                const githubUrl = await this.determineLinkType(url);
+                const evaluationResults = await this.evaluateUrl(githubUrl);
+>>>>>>> 2b5dde0106df7adc901413b8b7d7875ca79ec109
                 this.writeResults(evaluationResults);
             }
 
         } catch (error) {
             process.exit(1); // Signal failure
         }
+    }
+
+    // Method to determine the type of link (GitHub or NPM) and return the appropriate URL
+    private async determineLinkType(url: string): Promise<string> {
+        const githubRegex = /https:\/\/github.com\/.*/;
+        const npmRegex = /https:\/\/www.npmjs.com\/package\/.*/;
+
+        if (githubRegex.test(url)) {
+            return url;
+        } else if (npmRegex.test(url)) {
+            let npmApi: NpmApi = new NpmApi();
+            let repoUrl = npmApi.getRepo(url);
+
+            return repoUrl;
+        } else {
+            throw new Error('Invalid URL Type: Must be a GitHub or NPM URL');
+        }
+
     }
 
     private async evaluateUrl(url: string): Promise<Record<string, any>> {
@@ -68,7 +95,7 @@ export class URLProcessor {
         const busFactor = tbusFactor.getScore();
         const busFactorEnd = process.hrtime(busFactorStart);
         const busFactorLatency = (busFactorEnd[0] * 1e9 + busFactorEnd[1]) / 1e9; // Convert to seconds
-    
+
         // ResponsiveMaintainer (RM) latency
         const rmStart = process.hrtime();
         const tRM = new RM(url);
@@ -76,7 +103,7 @@ export class URLProcessor {
         const responsiveMaintainer = tRM.getScore();
         const rmEnd = process.hrtime(rmStart);
         const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
-    
+
         // License latency
         const licenseStart = process.hrtime();
         const tlicense = new License(url);
@@ -84,7 +111,7 @@ export class URLProcessor {
         const license = tlicense.getScore();
         const licenseEnd = process.hrtime(licenseStart);
         const licenseLatency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
-    
+
         // RampUp latency
         const rampUpStart = process.hrtime();
         const trampUp = new RampUp(url);
@@ -93,7 +120,7 @@ export class URLProcessor {
         // const rampUp = 1;
         const rampUpEnd = process.hrtime(rampUpStart);
         const rampUpLatency = (rampUpEnd[0] * 1e9 + rampUpEnd[1]) / 1e9; // Convert to seconds
-    
+
         // Correctness latency
         const correctnessStart = process.hrtime();
         // const tcorrectness = new Correctness(url);
@@ -102,7 +129,7 @@ export class URLProcessor {
         const correctness = 1;
         const correctnessEnd = process.hrtime(correctnessStart);
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
-    
+
         // NetScore latency
         const netScore = license * (0.4 * responsiveMaintainer + 0.2 * busFactor + 0.2 * rampUp + 0.2 * correctness);
         const netScoreLatency = busFactorLatency + rmLatency + licenseLatency + rampUpLatency + correctnessLatency; // Convert to seconds
@@ -140,7 +167,7 @@ async function main() {
         process.exit(1);
     }
 
-    const [,, urlFile, outputFile] = process.argv;
+    const [, , urlFile, outputFile] = process.argv;
 
     const urlProcessor = new URLProcessor(urlFile, outputFile);
     await urlProcessor.processUrlsFromFile();
