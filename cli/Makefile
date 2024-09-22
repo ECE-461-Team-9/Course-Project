@@ -34,6 +34,7 @@ compile:
 		echo "Adding Dart SDK to PATH."; \
 		echo "export PATH=\"\$$PATH:$$NEW_PATH\"" >> ~/.bashrc; \
 		export PATH="$$PATH:$$NEW_PATH"; \
+		source ~/.bashrc; \
 		\
 		npm install; \
 	fi
