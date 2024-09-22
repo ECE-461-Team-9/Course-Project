@@ -17,10 +17,17 @@ SystemLogger.initialize();
 export class URLProcessor {
     private urlFile: string;
     private outputFile: string;
+    private api: NpmApi;
 
     constructor(urlFile: string, outputFile: string) {
         this.urlFile = urlFile;
         this.outputFile = outputFile;
+        try {
+            this.api = new NpmApi();
+        } catch (error) {
+            SystemLogger.error(`Error creating NpmApi object: ${error}`);
+            throw error;
+        }
 
         // Clear the output file when the class is instantiated
         this.clearOutputFile();
@@ -65,22 +72,24 @@ export class URLProcessor {
     private async determineLinkType(url: string): Promise<string> {
         const githubRegex = /https:\/\/github.com\/.*/;
         const npmRegex = /https:\/\/www.npmjs.com\/package\/.*/;
-
+    
         if (githubRegex.test(url)) {
             SystemLogger.info(`GitHub URL detected: ${url}`);
             return url;
         } else if (npmRegex.test(url)) {
             SystemLogger.info(`NPM URL detected: ${url}`);
-            let npmApi: NpmApi = new NpmApi();
-            SystemLogger.info(`Converting NPM URL to GitHub URL: ${url}`);
-            let repoUrl = await npmApi.getRepo(url);
+    
+            // Extracting the part after '.com/' for NPM URLs
+            const npmPart = url.split('package')[1];
+            SystemLogger.info(`NPM URL part after .com: ${npmPart}`);
+    
+            let repoUrl = await this.api.getRepo(npmPart);
             SystemLogger.info(`NPM URL converted to GitHub URL: ${repoUrl}`);
-
+    
             return repoUrl;
         } else {
             throw new Error('Invalid URL Type: Must be a GitHub or NPM URL');
         }
-
     }
 
     private async evaluateUrl(url: string): Promise<Record<string, any>> {
