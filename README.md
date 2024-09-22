@@ -1,3 +1,9 @@
+Team Members:
+  - Leo Chen: chen3900@purdue.edu
+  - Lane Crowder: crowderl@purdue.edu
+  - Lawrence Smith: smit4407@purdue.edu
+  - Shashwat Misra: misra22@purdue.edu
+
 # A CLI for Trustworthy Module Re-Use
 Purpose
 The CLI tool is designed to help ACME Corporation assess the trustworthiness of open-source modules for reuse in their infrastructure. It evaluates repositories based on key metrics such as NetScore, RampUp, Correctness, BusFactor, License, and ResponsiveMaintainer. These metrics ensure that open-source modules meet ACME's standards of quality, maintainability, and responsiveness, helping the company make informed decisions about integrating external software components.
