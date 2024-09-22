@@ -5,6 +5,7 @@ import { RM } from './RM';
 import { License } from './License';
 import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
+import { NetScore } from './NetScore';
 import { SystemLogger } from '../utilities/logger';
 import * as dotenv from 'dotenv';
 import { NpmApi } from '../api/Api';
@@ -113,16 +114,17 @@ export class URLProcessor {
 
         // Correctness latency
         const correctnessStart = process.hrtime();
-        // const tcorrectness = new Correctness(url);
-        // await tcorrectness.init();
-        // const correctness = tcorrectness.getScore();
-        const correctness = 1;
+        const tcorrectness = new Correctness(url);
+        await tcorrectness.init();
+        const correctness = tcorrectness.getScore();
+        // const correctness = 1;
         const correctnessEnd = process.hrtime(correctnessStart);
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
 
         // NetScore latency
-        const netScore = license * (0.4 * responsiveMaintainer + 0.2 * busFactor + 0.2 * rampUp + 0.2 * correctness);
-        const netScoreLatency = busFactorLatency + rmLatency + licenseLatency + rampUpLatency + correctnessLatency; // Convert to seconds
+        const tnetScore = new NetScore(url, [busFactor, responsiveMaintainer, rampUp, correctness, license], [0.2, 0.2, 0.2, 0.2, 0.2], [busFactorLatency, rmLatency, rampUpLatency, correctnessLatency, licenseLatency]);
+        const netScore = tnetScore.getScore();
+        const netScoreLatency = tnetScore.getLatency(); // Convert to seconds
 
         // Return evaluation results for logging/output
         return {
