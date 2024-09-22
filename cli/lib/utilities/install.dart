@@ -2,13 +2,13 @@ import 'dart:io';
 
 /// Default TypeScript libraries and their versions.
 final Map<String, String?> defaultDependencies = {
-  'typescript': null,   // TypeScript compiler
-  'ts-node': null,      // Run TypeScript files directly
-  '@types/node': '18.7.0',   // Node.js type definitions
-  'axios' : null,
-  'isomorphic-git' : null,
-  'fs' : null,
-  'dotenv' : null
+  'typescript': null, // TypeScript compiler
+  'ts-node': '10.9.2', // Run TypeScript files directly
+  '@types/node': '18.7.0', // Node.js type definitions
+  'axios': null,
+  'isomorphic-git': null,
+  'fs': null,
+  'dotenv': null
 };
 
 /// Installs the specified npm dependencies, using default values if none provided.
@@ -18,7 +18,7 @@ Future<void> installDependencies([Map<String, String?>? dependencies]) async {
 
   // Construct the npm install command arguments
   var args = ['install', '--save-dev'];
-  
+
   effectiveDependencies.forEach((pkg, version) {
     args.add(version == null ? pkg : '$pkg@$version');
   });
