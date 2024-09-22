@@ -9,8 +9,9 @@ describe('RM', () => {
   let rm: RM;  // Instance of the Responsive Maintainer class
 
   // Set up a new RM instance before each test
-  beforeEach(() => {
+  beforeEach(async () => {
     rm = new RM('https://github.com/owner/repo');
+    await rm.init();
   });
 
   // Test case for a repository with mostly unresolved issues and PRs
@@ -33,7 +34,6 @@ describe('RM', () => {
     });
 
     // Initialize and calculate the score using getScore()
-    await rm.init(); // Correctly await the init method
     const score = rm.getScore();
     expect(score).toBeLessThan(0.5);
   });
@@ -49,7 +49,6 @@ describe('RM', () => {
     });
 
     // Initialize and calculate the score using getScore()
-    await rm.init(); // Correctly await the init method
     const score = rm.getScore();
     expect(score).toBeGreaterThanOrEqual(0);
     expect(score).toBeLessThanOrEqual(1);
@@ -75,7 +74,6 @@ describe('RM', () => {
     });
 
     // Initialize and calculate the score using getScore()
-    await rm.init(); // Correctly await the init method
     const score = rm.getScore();
     expect(score).toBeGreaterThanOrEqual(0.5);
   });
@@ -91,7 +89,6 @@ describe('RM', () => {
     });
 
     // Expect the calculation to handle the error
-    await rm.init(); // Correctly await the init method
     const score = rm.getScore();
     expect(score).toBe(0);
   });
