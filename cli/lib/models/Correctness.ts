@@ -56,17 +56,27 @@ export class Correctness extends Metric {
 
     private async checkCorrectness(): Promise<number> {
         try {
-
             let score = 0;
+    
+            // Check if package.json or README.md exists before proceeding
+            const packageExists = fs.existsSync(`${this.repoPath}/package.json`);
+            const readmeExists = fs.existsSync(`${this.repoPath}/README.md`);
+    
+            if (!packageExists && !readmeExists) {
+                SystemLogger.info("Neither package.json nor README.md exists in the repository.");
+                return 0; // Return 0 if neither file exists
+            }
+    
+            // Proceed with checking correctness if at least one file exists
             score += this.moreDependencies();
             score += this.Readme();
             score += await this.ApiHistory();
-
-            if(score >= 1.0){
+    
+            if (score >= 1.0) {
                 return 1.0;
             }
             return score;
-            
+    
         } catch (error) {
             SystemLogger.error(`Error checking correctness: ${error}`);
             return 0;
@@ -144,7 +154,8 @@ export class Correctness extends Metric {
             score+=0.05
 
             const readmeContent = fs.readFileSync(ReadmePath, 'utf-8');
-            const npmDownloadsBadge = /\[!\[NPM Downloads\]\[npm-downloads\]\]\[npmtrends-url\]/;
+            const npmDownloadsBadge = /\[!\[.*NPM Downloads.*\]\[npm-downloads\]\]\s?\[npmtrends-url\]/;
+
 
             if (npmDownloadsBadge.test(readmeContent)) {
                 score += 0.3; 
