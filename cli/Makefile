@@ -35,8 +35,6 @@ compile:
 		echo "export PATH=\"\$$PATH:$$NEW_PATH\"" >> ~/.bashrc; \
 		export PATH="$$PATH:$$NEW_PATH"; \
 		source ~/.bashrc; \
-		\
-		npm install; \
 	fi
 	dart compile exe bin/main.dart -o ../run; 
 
