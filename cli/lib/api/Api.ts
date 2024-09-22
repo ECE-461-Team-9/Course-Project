@@ -1,9 +1,11 @@
 import { ApiResponse, Url } from "../typedefs/definitions";
 import axios, { AxiosResponse } from 'axios';
 import * as dotenv from 'dotenv';
+import { SystemLogger } from "../utilities/logger";
 
 // Load environment variables from .env file
 dotenv.config();
+SystemLogger.initialize();
 
 interface ApiArgs {
     url: Url;
@@ -29,10 +31,12 @@ class API {
 
     async get(endpoint: string): Promise<ApiResponse> {
         try {
-            const response: AxiosResponse = await axios.get(`${this._url}${endpoint}`);
+            SystemLogger.info(`Making GET request to ${endpoint}`);
+            const response: AxiosResponse = await axios.get(`${endpoint}`);
+            SystemLogger.info(`GET request successful`);
             return response.data;
         } catch (error) {
-            console.error('Error making GET request:', error);
+            SystemLogger.error('Error making GET request:');
             throw error;
         }
     }
@@ -92,12 +96,17 @@ class NpmApi extends API {
     }
 
     async getRepo(endpoint: string): Promise<string> {
-        const response: any = await super.get(endpoint);
-        let repoUrl: string = response.repository.url;
+        SystemLogger.info(`NPMjs URL: ${this._url}${endpoint}`);
+        const response: AxiosResponse = await axios.get(`${this._url}${endpoint}`);
+        SystemLogger.info(`NPMjs Response: ${response}`);
+        let repoUrl: string = response.data.repository.url;
         if (repoUrl === undefined) {
             throw new Error('NPMjs URL: GitHub Repository URL not found');
         }
-        return response;
+        // Remove 'git+' prefix from the start and '.git' suffix from the end
+        repoUrl = repoUrl.replace(/^git\+/, '').replace(/\.git$/, '');
+
+        return repoUrl;
     }
 
 }
