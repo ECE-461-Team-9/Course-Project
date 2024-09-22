@@ -1,8 +1,9 @@
 import { Metric } from './Metric';
-import { GitHubApi } from '../api/GitHubApi';
+import { GitHubApi } from '../api/Api';
 import { SystemLogger } from '../utilities/logger';
 import * as dotenv from 'dotenv';
 
+// Load environment variables from .env file
 dotenv.config();
 SystemLogger.initialize();
 
@@ -21,28 +22,31 @@ interface IssueOrPR {
 export class RM extends Metric {
     private githubApi: GitHubApi;
     private owner: string;
-    private repo: string;
 
-    constructor(Url: string) {
-        SystemLogger.info(`RM initialized with URL: ${Url}`);
-        super(Url);
-        this.githubApi = new GitHubApi();
-        this.score = 0;
-        [this.owner, this.repo] = this.parseGitHubUrl(Url);
+    constructor(URL: string) {
+        SystemLogger.info(`RM initialized with URL: ${URL}`);
+        super(URL);
+        try {
+            this.githubApi = new GitHubApi();
+            if (!this.githubApi) {
+                SystemLogger.error('API Error');
+                throw new Error('API Error');
+            }
+
+            this.score = 0;
+            [this.owner, this.URL] = this.parseGitHubUrl();
+        } catch (error) {
+            SystemLogger.error('Error initializing RM');
+            throw error;
+        }
     }
 
-    private parseGitHubUrl(url: string): [string, string] {
-        const parts = url.split('/');
+    private parseGitHubUrl(): [string, string] {
+        const parts = this.URL.split('/');
         return [parts[3], parts[4]];
     }
 
-    public static async create(Url: string): Promise<RM> {
-        const rm = new RM(Url);
-        await rm.init(); // Wait for async initialization
-        return rm;
-    }
-
-    private async init(): Promise<void> {
+    public async init(): Promise<void> {
         this.score = await this.calculateScore();
         SystemLogger.info(`RM score initialized to: ${this.score}`);
     }
@@ -52,26 +56,17 @@ export class RM extends Metric {
      */
     async calculateScore(): Promise<number> {
         try {
-            const endpoint = `/repos/${this.owner}/${this.repo}`;
+            const endpoint = `/repos/${this.owner}/${this.URL}`;
             const repoData = await this.githubApi.get(endpoint) as unknown as RepoData;
 
-            // Fetch open issues and pull requests data
-            const issuesEndpoint = `/repos/${this.owner}/${this.repo}/issues?state=open&per_page=100`;
-            const openIssues = await this.githubApi.get(issuesEndpoint) as unknown as IssueOrPR[];
+            // Fetch open issues and PRs using the new fetchIssueData function
+            const { openIssues, filteredPRs } = await this.fetchIssueData();
             
-            const prsEndpoint = `/repos/${this.owner}/${this.repo}/pulls?state=open&per_page=100`;
-            const openPRs = await this.githubApi.get(prsEndpoint) as unknown as IssueOrPR[];
-
-            // Filter out bot-created PRs
-            const filteredPRs = openPRs.filter(pr => pr.user.type !== 'Bot');
-
-            // Metrics to be used for the RM score calculation
-            SystemLogger.info(`Repo data: ${JSON.stringify(repoData)}`);
             const lastCommitDate = await this.getLastCommitDate(repoData);
 
             // Calculate individual scores based on chosen metrics
-            const issueAgeScore = this.calculateIssueOrPRAgeScore(openIssues); // Score based on issue age
-            const prAgeScore = this.calculateIssueOrPRAgeScore(filteredPRs); // Score based on PR age
+            const issueAgeScore = this.calculateIssueOrPRAgeScore(openIssues);
+            const prAgeScore = this.calculateIssueOrPRAgeScore(filteredPRs);
             const recentCommitScore = this.calculateRecencyScore(lastCommitDate);
 
             // Average out the scores with a weighted distribution
@@ -82,6 +77,30 @@ export class RM extends Metric {
         } catch (error) {
             SystemLogger.error('Error calculating RM score');
             return 0;
+        }
+    }
+
+    /**
+     * Fetch open issues and filtered PRs data from the repository.
+     * @returns {Promise<{openIssues: IssueOrPR[], filteredPRs: IssueOrPR[]}>}
+     */
+    private async fetchIssueData(): Promise<{ openIssues: IssueOrPR[], filteredPRs: IssueOrPR[] }> {
+        try {
+            // Fetch open issues data
+            const issuesEndpoint = `/repos/${this.owner}/${this.URL}/issues?state=open&per_page=100`;
+            const openIssues = await this.githubApi.get(issuesEndpoint) as IssueOrPR[];
+
+            // Fetch open pull requests data
+            const prsEndpoint = `/repos/${this.owner}/${this.URL}/pulls?state=open&per_page=100`;
+            const openPRs = await this.githubApi.get(prsEndpoint) as IssueOrPR[];
+
+            // Filter out bot-created PRs
+            const filteredPRs = openPRs.filter(pr => pr.user.type !== 'Bot');
+
+            return { openIssues, filteredPRs };
+        } catch (error) {
+            SystemLogger.error('Error fetching issue and PR data');
+            return { openIssues: [], filteredPRs: [] };
         }
     }
 
@@ -133,7 +152,7 @@ export class RM extends Metric {
     private calculateRecencyScore(lastCommitDate: Date): number {
         const today = new Date();
         const daysSinceLastCommit = (today.getTime() - lastCommitDate.getTime()) / (1000 * 60 * 60 * 24);
-        
+
         // Score decreases as days since last commit increases
         return Math.max(1 - daysSinceLastCommit / 365, 0);
     }

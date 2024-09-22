@@ -36,16 +36,39 @@ class Router {
         break;
 
       default:
-        print('Error: Invalid argument.');
-        exit(1);
+        // Ensure that exactly one argument (URL_FILE) is provided
+        if (_arguments.length != 1) {
+          print('Error: Exactly one argument (URL_FILE) is required for default case.');
+          exit(1); // Exit with failure
+        }
+
+        String urlFile = _arguments[0];
+
+        try {
+          File file = File(urlFile);
+
+          // Check if the file exists
+          if (!file.existsSync()) {
+            print('Error: File at "$urlFile" does not exist.');
+            exit(1); // Exit with failure
+          }
+
+          // File exists, proceed with reading
+          processUrlsFromFile(urlFile, 'output.NDJSON');
+          // print('Successfully read URLs from "$urlFile".');
+        } catch (e) {
+          print('Error reading file at "$urlFile": $e');
+          exit(1); // Exit with failure
+        }
+
+        break;
     }
   }
 
   void _installDependencies() async {
-    print('Installing dependencies...');
     try {
       await installDependencies();
-      print('Dependencies installation complete.');
+      exit(0);
     } catch (e) {
       print('Failed to install dependencies: $e');
       exit(1);
