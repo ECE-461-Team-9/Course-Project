@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest --coverage --json > coverage.json"
+    "test": "jest --coverage --json --outputFile=test-results.json > coverage.json"
   },
   "jest": {
     "preset": "ts-jest",
