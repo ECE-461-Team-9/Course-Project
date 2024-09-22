@@ -84,8 +84,6 @@ export class SystemLogger {
     const timestamp = new Date().toISOString();
     const logMessage = `${timestamp} [${level}]: ${message}\n`;
 
-     console.log(logMessage.trim());  // Log to console
-
     if (this.logFile) {
       fs.appendFile(this.logFile, logMessage, (err) => {
         if (err) console.error(`Failed to write to log file: ${err}`);
