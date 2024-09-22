@@ -30,7 +30,6 @@ class Router {
     try {
       final result = await Process.run('node', ['-v']);
       if (result.exitCode == 0) {
-        print('Node.js is installed: ${result.stdout}');
       } else {
         print('Node.js is not installed.');
       }
@@ -47,9 +46,7 @@ class Router {
 
     switch (_arguments[0]) {
       case 'install':
-        print('Installing dependencies...');
         installDependencies().then((_) {
-          print('Dependencies installation complete.');
         }).catchError((e) {
           print('Failed to install dependencies: $e');
           exit(1); // Exit with failure
@@ -82,7 +79,7 @@ class Router {
 
           // File exists, proceed with reading
           processUrlsFromFile(urlFile, 'output.NDJSON');
-          print('Successfully read URLs from "$urlFile".');
+          // print('Successfully read URLs from "$urlFile".');
         } catch (e) {
           print('Error reading file at "$urlFile": $e');
           exit(1); // Exit with failure

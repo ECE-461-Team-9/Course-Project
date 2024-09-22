@@ -1,4 +1,10 @@
 import { Url } from "../typedefs/definitions";
+import { SystemLogger } from '../utilities/logger';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();    
+SystemLogger.initialize();
 
 export class Metric {
     public score: number;
@@ -10,7 +16,6 @@ export class Metric {
     }
 
     getScore() :number {
-        console.log("Score: " + this.score);
         return this.score;
     }
 

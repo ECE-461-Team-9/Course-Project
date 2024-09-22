@@ -5,13 +5,12 @@ import { RM } from './RM';
 import { License } from './License';
 import { RampUp } from './RampUp';
 import { Correctness } from './Correctness';
-import { FilePath } from '../typedefs/definitions'; // Assuming FilePath is imported from here
 import { SystemLogger } from '../utilities/logger';
 import * as dotenv from 'dotenv';
 import { NpmApi } from '../api/Api';
 
 // Load environment variables from .env file
-dotenv.config();
+dotenv.config();    
 SystemLogger.initialize();
 
 export class URLProcessor {
@@ -81,8 +80,9 @@ export class URLProcessor {
         SystemLogger.info(`Evaluating URL: ${url}`);
         // BusFactor latency
         const busFactorStart = process.hrtime();
-        //const busFactor = new BusFactor(url).getScore();
-        const busFactor = 1;
+        const tbusFactor = new BusFactor(url);
+        await tbusFactor.init();
+        const busFactor = tbusFactor.getScore();
         const busFactorEnd = process.hrtime(busFactorStart);
         const busFactorLatency = (busFactorEnd[0] * 1e9 + busFactorEnd[1]) / 1e9; // Convert to seconds
 
@@ -104,14 +104,18 @@ export class URLProcessor {
 
         // RampUp latency
         const rampUpStart = process.hrtime();
-        //const rampUp = new RampUp(url).getScore();
-        const rampUp = 1;
+        const trampUp = new RampUp(url);
+        await trampUp.init();
+        const rampUp = trampUp.getScore();
+        // const rampUp = 1;
         const rampUpEnd = process.hrtime(rampUpStart);
         const rampUpLatency = (rampUpEnd[0] * 1e9 + rampUpEnd[1]) / 1e9; // Convert to seconds
 
         // Correctness latency
         const correctnessStart = process.hrtime();
-        //const correctness = new Correctness(url).getScore();
+        // const tcorrectness = new Correctness(url);
+        // await tcorrectness.init();
+        // const correctness = tcorrectness.getScore();
         const correctness = 1;
         const correctnessEnd = process.hrtime(correctnessStart);
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
@@ -123,24 +127,26 @@ export class URLProcessor {
         // Return evaluation results for logging/output
         return {
             URL: url,
-            NetScore: netScore.toFixed(3),
-            NetScore_Latency: netScoreLatency.toFixed(3),
-            BusFactor: busFactor.toFixed(3),
-            BusFactor_Latency: busFactorLatency.toFixed(3),
-            ResponsiveMaintainer: responsiveMaintainer.toFixed(3),
-            ResponsiveMaintainer_Latency: rmLatency.toFixed(3),
-            RampUp: rampUp.toFixed(3),
-            RampUp_Latency: rampUpLatency.toFixed(3),
-            Correctness: correctness.toFixed(3),
-            Correctness_Latency: correctnessLatency.toFixed(3),
-            License: license.toFixed(3),
-            License_Latency: licenseLatency.toFixed(3)
+            NetScore: parseFloat(netScore.toFixed(3)),
+            NetScore_Latency: parseFloat(netScoreLatency.toFixed(3)),
+            BusFactor: parseFloat(busFactor.toFixed(3)),
+            BusFactor_Latency: parseFloat(busFactorLatency.toFixed(3)),
+            ResponsiveMaintainer: parseFloat(responsiveMaintainer.toFixed(3)),
+            ResponsiveMaintainer_Latency: parseFloat(rmLatency.toFixed(3)),
+            RampUp: parseFloat(rampUp.toFixed(3)),
+            RampUp_Latency: parseFloat(rampUpLatency.toFixed(3)),
+            Correctness: parseFloat(correctness.toFixed(3)),
+            Correctness_Latency: parseFloat(correctnessLatency.toFixed(3)),
+            License: parseFloat(license.toFixed(3)),
+            License_Latency: parseFloat(licenseLatency.toFixed(3))
         };
     }
 
     private writeResults(result: Record<string, any>): void {
+        const formattedResult = JSON.stringify(result);
         // Write each result in NDJSON format to the output file
-        fs.appendFileSync(this.outputFile, JSON.stringify(result) + '\n', 'utf8');
+        fs.appendFileSync(this.outputFile, formattedResult + '\n', 'utf8');
+        console.log(formattedResult);
     }
 }
 
