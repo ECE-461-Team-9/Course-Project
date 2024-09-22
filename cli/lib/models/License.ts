@@ -3,8 +3,10 @@ import * as fs from 'fs';
 import * as http from 'isomorphic-git/http/node';
 import { Metric } from './Metric';
 import { SystemLogger } from '../utilities/logger';
+import * as dotenv from 'dotenv';
 
-process.env;
+// Load environment variables from .env file
+dotenv.config();
 SystemLogger.initialize();
 
 export class License extends Metric {
@@ -14,12 +16,14 @@ export class License extends Metric {
     constructor(URL: string, compatibleLicenses: string[] = ['LGPLv2.1', 'MIT', 'Apache-2.0']) {
         SystemLogger.info(`License initialized with URL: ${URL}`);
         super(URL);
-        this.repoPath = '/home/shay/a/chen3900/Documents/ECE461/Leo-461-Course-Project/test'; // Set repoPath to './test'
+        this.repoPath = `${process.cwd()}/test`; // Set repoPath to './test'
+
         this.compatibleLicenses = compatibleLicenses; // Initialize the list of compatible licenses
         this.score = 0; // Initialize score with a default number value
     }
 
     public async init(): Promise<void> {
+        this.cleanUpRepo(); // Clean up the cloned repository
         this.score = await this.checkCompatibilityWithLicenses(this.URL);
         SystemLogger.info(`License score initialized to: ${this.score}`);
         this.cleanUpRepo(); // Clean up the cloned repository
@@ -34,17 +38,21 @@ export class License extends Metric {
                 dir: this.repoPath, // Initialize the repository in './test'
                 defaultBranch: 'main',
             });
-    
-            // Clone the repository to the 'test' folder
-            await git.clone({
-                fs,
-                http, // Use http for HTTP and HTTPS requests
-                dir: this.repoPath, // Clone into './test'
-                url: Url,
-                depth: 1, // Fetch only the latest commit
-            });
+            try {
+                // Clone the repository to the 'test' folder
+                await git.clone({
+                    fs,
+                    http, // Use http for HTTP and HTTPS requests
+                    dir: this.repoPath, // Clone into './test'
+                    url: Url,
+                    depth: 1, // Fetch only the latest commit
+                });
+            } catch (error) {
+                SystemLogger.error(`Error cloning repository: ${error}`);
+                throw error;
+            }
 
-            SystemLogger.info(`Checking compatibility with licenses`);
+            SystemLogger.info(`Repo cloned`);
     
             // Define a list of common license file paths
             const licensePaths = [
