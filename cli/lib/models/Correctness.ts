@@ -4,19 +4,32 @@ import * as http from 'isomorphic-git/http/node';
 import { Metric } from './Metric';
 import { SystemLogger } from '../utilities/logger';
 import { execSync } from 'child_process';
+import { GitHubApi } from '../api/Api';
 
 SystemLogger.initialize();
+
+interface Repository {
+    updated_at: string;
+    stargazers_count: number;
+    forks_count: number;
+    open_issues_count: number;
+}
 
 
 export class Correctness extends Metric {
     private repoPath: string;
     public score: number;
+    private owner: string;
+    private repo: string;
+    private githubApi: GitHubApi;
 
     constructor(Url: string) {
         SystemLogger.info(`Correctness initialized with URL: ${Url}`);
         super(Url);
-        this.repoPath = '/tmp/repo-correctness';
+        this.githubApi = new GitHubApi();
+        this.repoPath = '/home/shay/a/smit4407/Documents/Course-Project-461/test';
         this.score = 0;
+        [this.owner, this.repo] = this.parseGitHubUrl();
     }
 
     async init(): Promise<void> {
@@ -43,68 +56,107 @@ export class Correctness extends Metric {
 
     private async checkCorrectness(): Promise<number> {
         try {
-            //checks if the pack
-            const hasTests = this.detectTestFramework();
-            if (!hasTests) {
-                SystemLogger.info('No tests detected in the repository');
-                return 0;
-            }
 
-            const testResults = this.runTests();
-            return this.calculateScore(testResults);
+            let score = 0;
+            score += this.moreDependencies();
+            score += this.Readme();
+            score += await this.ApiHistory();
+
+            if(score >= 1.0){
+                return 1.0;
+            }
+            return score;
+            
         } catch (error) {
             SystemLogger.error(`Error checking correctness: ${error}`);
             return 0;
         }
     }
 
-    private detectTestFramework(): boolean {
+    private moreDependencies(): number {
+        let score = 0;
+
         const packageJsonPath = `${this.repoPath}/package.json`;
         if (fs.existsSync(packageJsonPath)) {
             //allows to parse with json
             const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-            //get devDependencies and depnedencies
-            const devDependencies = packageJson.devDependencies || {};
-            const dependencies = packageJson.dependencies || {};
 
-            //checks the             
-            const testFrameworks = ['jest', 'mocha', 'jasmine', 'ava', 'tape'];
-            return testFrameworks.some(framework => 
-                devDependencies[framework] || dependencies[framework]
-            );
+            if (packageJson.devDependencies) {
+                score += 0.025
+            }
+            if (packageJson.dependencies) {
+                score += 0.025
+            }
+            if (packageJson.scripts) {
+                if (packageJson.scripts.build) {
+                    score += 0.025
+                }
+                if (packageJson.scripts.test) {
+                    score += 0.05
+                }
+                if (packageJson.scripts.lint) {
+                    score += 0.025
+                }
+                if (packageJson.scripts.prettier) {
+                    score += 0.025
+                }
+            }
         }
-        return false;
+        return score;
     }
 
-    private runTests(): { passed: number, total: number } {
-        try {
-            //go to main root
-            process.chdir(this.repoPath);
-            execSync('npm install', { stdio: 'ignore' });
-            const testOutput = execSync('npm test', { encoding: 'utf-8' });
-            
-            // This is a simple regex to match "X passing" and "Y failing".
-            // You might need to adjust this based on the actual output format.
-            const passingMatch = testOutput.match(/(\d+)\s+passing/);
-            const failingMatch = testOutput.match(/(\d+)\s+failing/);
-            
-            //1 is the first captured group, so the int
-            const passed = passingMatch ? parseInt(passingMatch[1]) : 0;
-            const failed = failingMatch ? parseInt(failingMatch[1]) : 0;
-            const total = passed + failed;
+    private async ApiHistory(): Promise<number> {
+        //commit histroy, stars, forks, issues, 
+        let score = 0;
 
-            return { passed, total };
-        } catch (error) {
-            SystemLogger.error(`Error running tests: ${error}`);
-            return { passed: 0, total: 0 };
+        //last commit
+        const endPoint = `/repos/${this.owner}/${this.repo}`;
+        const response = await this.githubApi.get(endPoint) as Repository;
+        const comparisonDate = new Date('2024-04-01T00:00:00Z');
+        const lastCommitDate = new Date(response.updated_at);
+
+        if (lastCommitDate > comparisonDate) {
+            score += 0.15
         }
+        if (response.forks_count > 1000) {
+            score += 0.2
+        }
+        if (response.open_issues_count <= 50) {
+            score += 0.1
+        }
+        if (response.stargazers_count >= 10_000) {
+
+            score += 0.2
+        }
+        if (response.stargazers_count >= 50_000) {
+
+            score += 0.4
+        }
+        return score;
     }
 
-    private calculateScore(testResults: { passed: number, total: number }): number {
-        if (testResults.total === 0){
-            return 0;
-        } 
-        return testResults.passed / testResults.total;
+    private Readme(): number {
+        //readme, downloads
+        let score = 0;
+
+        const ReadmePath = `${this.repoPath}/README.md`;
+        if (fs.existsSync(ReadmePath)) {
+            score+=0.05
+
+            const readmeContent = fs.readFileSync(ReadmePath, 'utf-8');
+            const npmDownloadsBadge = /\[!\[NPM Downloads\]\[npm-downloads\]\]\[npmtrends-url\]/;
+
+            if (npmDownloadsBadge.test(readmeContent)) {
+                score += 0.3; 
+            }
+
+        }
+        return score;
+    }
+
+    private parseGitHubUrl(): [string, string] {
+        const parts = this.URL.split('/');
+        return [parts[3], parts[4]];
     }
 
     private cleanUpRepo(): void {
@@ -117,4 +169,3 @@ export class Correctness extends Metric {
         }
     }
 }
-
