@@ -20,6 +20,18 @@ class Router {
     }
   }
 
+  void _checkNodeInstallation() async {
+    try {
+      final result = await Process.run('node', ['-v']);
+      if (result.exitCode == 0) {
+      } else {
+        print('Node.js is not installed.');
+      }
+    } catch (e) {
+      print('Failed to check Node.js installation: $e');
+    }
+  }
+
   void _parseArguments() {
     if (_arguments.isEmpty) {
       print('Error: No arguments provided.');
@@ -29,6 +41,12 @@ class Router {
     switch (_arguments[0]) {
       case 'install':
         _installDependencies();
+
+        installDependencies().then((_) {
+        }).catchError((e) {
+          print('Failed to install dependencies: $e');
+          exit(1); // Exit with failure
+        });
         break;
 
       case 'test':
@@ -40,7 +58,32 @@ class Router {
         exit(1);
     }
   }
+        // Ensure that exactly one argument (URL_FILE) is provided
+        if (_arguments.length != 1) {
+          print(
+              'Error: Exactly one argument (URL_FILE) is required for default case.');
+          exit(1); // Exit with failure
+        }
 
+        String urlFile = _arguments[0];
+
+        try {
+          File file = File(urlFile);
+
+          // Check if the file exists
+          if (!file.existsSync()) {
+            print('Error: File at "$urlFile" does not exist.');
+            exit(1); // Exit with failure
+          }
+
+          // File exists, proceed with reading
+          processUrlsFromFile(urlFile, 'output.NDJSON');
+          // print('Successfully read URLs from "$urlFile".');
+        } catch (e) {
+          print('Error reading file at "$urlFile": $e');
+          exit(1); // Exit with failure
+        }
+  
   void _installDependencies() async {
     print('Installing dependencies...');
     try {

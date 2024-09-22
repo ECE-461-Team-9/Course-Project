@@ -1,6 +1,9 @@
 import { ApiResponse, Url } from "../typedefs/definitions";
 import axios, { AxiosResponse } from 'axios';
+import * as dotenv from 'dotenv';
 
+// Load environment variables from .env file
+dotenv.config();
 
 interface ApiArgs {
     url: Url;
@@ -49,10 +52,28 @@ class API {
  * console.log(response);
  */
 class GitHubApi extends API {
+    private token: string | undefined;
+
     constructor() {
         super({ url: 'https://api.github.com' });
+        this.token = process.env.GITHUB_TOKEN; // Load token from environment variable
+    }
+
+    async get(endpoint: string): Promise<ApiResponse> {
+        try {
+            const response: AxiosResponse = await axios.get(`${this._url}${endpoint}`, {
+                headers: {
+                    Authorization: `Bearer ${this.token}` // Set the authorization header
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error making GET request to GitHub API:', error);
+            throw error;
+        }
     }
 }
+
 
 /**
  * NpmApi class
@@ -69,6 +90,16 @@ class NpmApi extends API {
     constructor() {
         super({ url: 'https://registry.npmjs.org' });
     }
+
+    async getRepo(endpoint: string): Promise<string> {
+        const response: any = await super.get(endpoint);
+        let repoUrl: string = response.repository.url;
+        if (repoUrl === undefined) {
+            throw new Error('NPMjs URL: GitHub Repository URL not found');
+        }
+        return response;
+    }
+
 }
 
 export { GitHubApi, NpmApi };
