@@ -49,7 +49,9 @@ export class URLProcessor {
 
             for await (const line of rl) {
                 const url = line.trim();
+                SystemLogger.info(`Processing URL: ${url}`);
                 const githubUrl = await this.determineLinkType(url);
+                SystemLogger.info(`Processing URL: ${githubUrl}`);
                 const evaluationResults = await this.evaluateUrl(githubUrl);
                 this.writeResults(evaluationResults);
             }
@@ -65,10 +67,14 @@ export class URLProcessor {
         const npmRegex = /https:\/\/www.npmjs.com\/package\/.*/;
 
         if (githubRegex.test(url)) {
+            SystemLogger.info(`GitHub URL detected: ${url}`);
             return url;
         } else if (npmRegex.test(url)) {
+            SystemLogger.info(`NPM URL detected: ${url}`);
             let npmApi: NpmApi = new NpmApi();
-            let repoUrl = npmApi.getRepo(url);
+            SystemLogger.info(`Converting NPM URL to GitHub URL: ${url}`);
+            let repoUrl = await npmApi.getRepo(url);
+            SystemLogger.info(`NPM URL converted to GitHub URL: ${repoUrl}`);
 
             return repoUrl;
         } else {
