@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as http from 'isomorphic-git/http/node';
 import { Metric } from './Metric';
 import { SystemLogger } from '../utilities/logger';
-import { execSync } from 'child_process';
 import { GitHubApi } from '../api/Api';
 
 SystemLogger.initialize();
@@ -27,7 +26,7 @@ export class Correctness extends Metric {
         SystemLogger.info(`Correctness initialized with URL: ${Url}`);
         super(Url);
         this.githubApi = new GitHubApi();
-        this.repoPath = '/home/shay/a/smit4407/Documents/Course-Project-461/test';
+        this.repoPath = `${process.cwd()}/test`;
         this.score = 0;
         [this.owner, this.repo] = this.parseGitHubUrl();
     }
@@ -116,7 +115,7 @@ export class Correctness extends Metric {
     }
 
     private async ApiHistory(): Promise<number> {
-        //commit histroy, stars, forks, issues, 
+        //commit history, stars, forks, issues, 
         let score = 0;
 
         //last commit
