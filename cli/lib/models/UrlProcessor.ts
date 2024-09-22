@@ -94,6 +94,13 @@ export class URLProcessor {
 
     private async evaluateUrl(url: string): Promise<Record<string, any>> {
         SystemLogger.info(`Evaluating URL: ${url}`);
+    
+        // Maximum expected latency (set a reasonable maximum based on your application's context)
+        const maxLatency = 5; // Example: 5 seconds
+    
+        // Function to normalize latency
+        const normalizeLatency = (latency: number): number => Math.min(latency / maxLatency, 1);
+    
         // BusFactor latency
         const busFactorStart = process.hrtime();
         const tbusFactor = new BusFactor(url);
@@ -101,7 +108,8 @@ export class URLProcessor {
         const busFactor = tbusFactor.getScore();
         const busFactorEnd = process.hrtime(busFactorStart);
         const busFactorLatency = (busFactorEnd[0] * 1e9 + busFactorEnd[1]) / 1e9; // Convert to seconds
-
+        const normalizedBusFactorLatency = normalizeLatency(busFactorLatency);
+    
         // ResponsiveMaintainer (RM) latency
         const rmStart = process.hrtime();
         const tRM = new RM(url);
@@ -109,7 +117,8 @@ export class URLProcessor {
         const responsiveMaintainer = tRM.getScore();
         const rmEnd = process.hrtime(rmStart);
         const rmLatency = (rmEnd[0] * 1e9 + rmEnd[1]) / 1e9; // Convert to seconds
-
+        const normalizedRMLatency = normalizeLatency(rmLatency);
+    
         // License latency
         const licenseStart = process.hrtime();
         const tlicense = new License(url);
@@ -117,47 +126,51 @@ export class URLProcessor {
         const license = tlicense.getScore();
         const licenseEnd = process.hrtime(licenseStart);
         const licenseLatency = (licenseEnd[0] * 1e9 + licenseEnd[1]) / 1e9; // Convert to seconds
-
+        const normalizedLicenseLatency = normalizeLatency(licenseLatency);
+    
         // RampUp latency
         const rampUpStart = process.hrtime();
         const trampUp = new RampUp(url);
         await trampUp.init();
         const rampUp = trampUp.getScore();
-        // const rampUp = 1;
         const rampUpEnd = process.hrtime(rampUpStart);
         const rampUpLatency = (rampUpEnd[0] * 1e9 + rampUpEnd[1]) / 1e9; // Convert to seconds
-
+        const normalizedRampUpLatency = normalizeLatency(rampUpLatency);
+    
         // Correctness latency
         const correctnessStart = process.hrtime();
         const tcorrectness = new Correctness(url);
         await tcorrectness.init();
         const correctness = tcorrectness.getScore();
-        // const correctness = 1;
         const correctnessEnd = process.hrtime(correctnessStart);
         const correctnessLatency = (correctnessEnd[0] * 1e9 + correctnessEnd[1]) / 1e9; // Convert to seconds
-
+        const normalizedCorrectnessLatency = normalizeLatency(correctnessLatency);
+    
         // NetScore latency
-        const tnetScore = new NetScore(url, [busFactor, responsiveMaintainer, rampUp, correctness, license], [0.2, 0.2, 0.2, 0.2, 0.2], [busFactorLatency, rmLatency, rampUpLatency, correctnessLatency, licenseLatency]);
+        const tnetScore = new NetScore(url, [busFactor, responsiveMaintainer, rampUp, correctness, license], [0.2, 0.2, 0.2, 0.2, 0.2], [normalizedBusFactorLatency, normalizedRMLatency, normalizedRampUpLatency, normalizedCorrectnessLatency, normalizedLicenseLatency]);
         const netScore = tnetScore.getScore();
-        const netScoreLatency = tnetScore.getLatency(); // Convert to seconds
-
+        const netScoreLatency = tnetScore.getLatency(); // This might also need normalization based on your needs
+        const normalizednetScoreLatency = normalizeLatency(netScoreLatency);
+    
         // Return evaluation results for logging/output
         return {
             URL: url,
             NetScore: parseFloat(netScore.toFixed(3)),
-            NetScore_Latency: parseFloat(netScoreLatency.toFixed(3)),
+            NetScore_Latency: parseFloat(normalizednetScoreLatency.toFixed(3)),
             BusFactor: parseFloat(busFactor.toFixed(3)),
-            BusFactor_Latency: parseFloat(busFactorLatency.toFixed(3)),
+            BusFactor_Latency: parseFloat(normalizedBusFactorLatency.toFixed(3)),
             ResponsiveMaintainer: parseFloat(responsiveMaintainer.toFixed(3)),
-            ResponsiveMaintainer_Latency: parseFloat(rmLatency.toFixed(3)),
+            ResponsiveMaintainer_Latency: parseFloat(normalizedRMLatency.toFixed(3)),
             RampUp: parseFloat(rampUp.toFixed(3)),
-            RampUp_Latency: parseFloat(rampUpLatency.toFixed(3)),
+            RampUp_Latency: parseFloat(normalizedRampUpLatency.toFixed(3)),
             Correctness: parseFloat(correctness.toFixed(3)),
-            Correctness_Latency: parseFloat(correctnessLatency.toFixed(3)),
+            Correctness_Latency: parseFloat(normalizedCorrectnessLatency.toFixed(3)),
             License: parseFloat(license.toFixed(3)),
-            License_Latency: parseFloat(licenseLatency.toFixed(3))
+            License_Latency: parseFloat(normalizedLicenseLatency.toFixed(3))
         };
     }
+    
+    
 
     private writeResults(result: Record<string, any>): void {
         const formattedResult = JSON.stringify(result);
