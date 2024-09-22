@@ -1,30 +1,27 @@
 import 'dart:io';
-
 import 'install.dart';
 import 'URL_FILE.dart';
 
-///
 /// [Router] class parses the arguments and routes to the appropriate
 /// class based on the arguments provided.
-///
 class Router {
   late final List<String> _arguments;
 
   /// [Router] constructor
   Router(arguments) {
-    // check if Node.js is installed
+    // Check if Node.js is installed
     _checkNodeInstallation();
 
-    // set the argumets to the private variable
+    // Set the arguments to the private variable
     _arguments = arguments;
 
-    // check if the arguments are empty or more than one
+    // Check if the arguments are empty or more than one
     if (_arguments.isEmpty) {
       print('No arguments provided');
     } else if (_arguments.length > 1) {
       print('Too many arguments provided');
     } else {
-      // parse the arguments for the appropriate class
+      // Parse the arguments for the appropriate class
       _parseArguments();
     }
   }
@@ -59,15 +56,16 @@ class Router {
         });
         break;
 
-      case 'test suite':
+      case 'test':
         print('Running test suite...');
-        // Add your test suite execution logic here
+        _runTestSuite();
         break;
 
       default:
         // Ensure that exactly one argument (URL_FILE) is provided
         if (_arguments.length != 1) {
-          print('Error: Exactly one argument (URL_FILE) is required for default case.');
+          print(
+              'Error: Exactly one argument (URL_FILE) is required for default case.');
           exit(1); // Exit with failure
         }
 
@@ -85,7 +83,6 @@ class Router {
           // File exists, proceed with reading
           processUrlsFromFile(urlFile, 'output.NDJSON');
           print('Successfully read URLs from "$urlFile".');
-
         } catch (e) {
           print('Error reading file at "$urlFile": $e');
           exit(1); // Exit with failure
@@ -95,4 +92,30 @@ class Router {
     }
   }
 
+  void _runTestSuite() async {
+    print('Running test suite...');
+
+    try {
+      // Run the npm test command
+      final result = await Process.run('npm', ['run', 'test'], runInShell: true);
+
+      // Print the output and error exactly as Jest outputs it
+      if (result.stdout.isNotEmpty) {
+        stdout.write(result.stdout); // Direct output to stdout
+      }
+      if (result.stderr.isNotEmpty) {
+        stderr.write(result.stderr); // Direct errors to stderr
+      }
+
+      // Check if the test suite executed successfully
+      if (result.exitCode == 0) {
+        print('Test suite executed successfully.');
+      } else {
+        print('Test suite failed with exit code: ${result.exitCode}');
+      }
+    } catch (e) {
+      print('Failed to execute test suite: $e');
+    }
+  }
 }
+
