@@ -20,18 +20,6 @@ class Router {
     }
   }
 
-  void _checkNodeInstallation() async {
-    try {
-      final result = await Process.run('node', ['-v']);
-      if (result.exitCode == 0) {
-      } else {
-        print('Node.js is not installed.');
-      }
-    } catch (e) {
-      print('Failed to check Node.js installation: $e');
-    }
-  }
-
   void _parseArguments() {
     if (_arguments.isEmpty) {
       print('Error: No arguments provided.');
@@ -41,12 +29,6 @@ class Router {
     switch (_arguments[0]) {
       case 'install':
         _installDependencies();
-
-        installDependencies().then((_) {
-        }).catchError((e) {
-          print('Failed to install dependencies: $e');
-          exit(1); // Exit with failure
-        });
         break;
 
       case 'test':
@@ -54,14 +36,9 @@ class Router {
         break;
 
       default:
-        print('Error: Invalid argument.');
-        exit(1);
-    }
-  }
         // Ensure that exactly one argument (URL_FILE) is provided
         if (_arguments.length != 1) {
-          print(
-              'Error: Exactly one argument (URL_FILE) is required for default case.');
+          print('Error: Exactly one argument (URL_FILE) is required for default case.');
           exit(1); // Exit with failure
         }
 
@@ -83,12 +60,15 @@ class Router {
           print('Error reading file at "$urlFile": $e');
           exit(1); // Exit with failure
         }
-  
+
+        break;
+    }
+  }
+
   void _installDependencies() async {
-    print('Installing dependencies...');
     try {
       await installDependencies();
-      print('Dependencies installation complete.');
+      exit(0);
     } catch (e) {
       print('Failed to install dependencies: $e');
       exit(1);

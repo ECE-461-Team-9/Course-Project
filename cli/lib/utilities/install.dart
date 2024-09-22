@@ -26,9 +26,9 @@ Future<void> installDependencies([Map<String, String?>? dependencies]) async {
   // Run the npm install command
   await Process.run('npm', args).then((result) {
     if (result.exitCode == 0) {
-      print('TypeScript dependencies installed successfully.');
     } else {
       print('Error installing dependencies: ${result.stderr}');
+      exit(1);
     }
   });
 }
