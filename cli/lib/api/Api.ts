@@ -54,6 +54,7 @@ class GitHubApi extends API {
     }
 }
 
+
 /**
  * NpmApi class
  * @class NpmApi
@@ -69,6 +70,16 @@ class NpmApi extends API {
     constructor() {
         super({ url: 'https://registry.npmjs.org' });
     }
+
+    async getRepo(endpoint: string): Promise<string> {
+        const response: any = await super.get(endpoint);
+        let repoUrl: string = response.repository.url;
+        if (repoUrl === undefined) {
+            throw new Error('NPMjs URL: GitHub Repository URL not found');
+        }
+        return response;
+    }
+
 }
 
 export { GitHubApi, NpmApi };
